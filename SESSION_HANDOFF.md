@@ -2,7 +2,7 @@
 
 ## Current Backend Status
 
-**Levels 1, 2, 3, and 4 are complete.** The backend is ready to begin Level 5.
+**Levels 1, 2, 3, 4, and 5 are complete.** The backend is ready for Level 6.
 
 - `npx tsc --noEmit` — passes
 - `npx nest build` — passes
@@ -16,8 +16,9 @@
 | Level 2 | ✅ Complete | Seller Store (3), Seller Products (5), Dashboard (1) |
 | Level 3 | ✅ Complete | Wallet (3), Addresses (5), Cart (5), Checkout (1), Buyer Orders (2), Seller Orders (2) |
 | Level 4 | ✅ Complete | Discounts (5), Checkout Update, Seller Process Order (1), Reports (2) |
+| Level 5 | ✅ Complete | Driver Jobs (2), Driver Take/Complete (2), Driver History (1), Driver Earnings (1) |
 
-**Total endpoints: 37**
+**Total endpoints: 43**
 
 ## Architecture
 
@@ -31,11 +32,12 @@
 ### Key Patterns
 - Global `JwtAuthGuard` + `RolesGuard` via `APP_GUARD`
 - `@Public()` decorator for unauthenticated endpoints
-- `@ActiveRoles('Buyer')` / `@ActiveRoles('Seller')` for role-based access
+- `@ActiveRoles('Buyer')` / `@ActiveRoles('Seller')` / `@ActiveRoles('Driver')` for role-based access
 - Ownership checks via `ensureOwnership()` in services
 - Prisma transactions for multi-step operations
 - `SystemTimeService` for business timestamps
 - Centralized discount validation in `DiscountsService`
+- Conditional `updateMany` to prevent race conditions on job take
 
 ## Existing Modules
 
@@ -55,6 +57,7 @@
 | OrdersModule | `src/orders/` | Buyer order list/detail |
 | DiscountsModule | `src/discounts/` | Voucher/Promo CRUD and validation |
 | ReportsModule | `src/reports/` | Buyer spending + Seller income reports |
+| DriverModule | `src/driver/` | Driver delivery workflow (jobs, take, complete, history, earnings) |
 
 ## Prisma Schema
 
@@ -89,6 +92,7 @@
 2. **Wallet balance race condition** — concurrent checkouts could both pass balance check and both deduct. Acceptable for Level 3.
 3. **Order number collision** — `Math.random()` has low entropy. Very unlikely, caught by unique constraint.
 4. **Voucher remainingUsage race condition** — concurrent checkouts with same voucher could both pass remainingUsage check. Acceptable for Level 4.
+5. **Driver job take race condition** — two drivers could simultaneously call take on same job. Mitigated by conditional `updateMany` with `status=AVAILABLE AND driverId=null`. Only one will succeed. Acceptable for Level 5.
 
 ## Level 4 Implementation Summary
 
@@ -129,22 +133,45 @@
 - Buyer spending excludes returned orders (status != DIKEMBALIKAN)
 - Seller income report returns 0 until Level 5 creates SellerIncome records
 
-## Next Target: Level 5 Only
+## Level 5 Implementation Summary
 
-Implement Level 5 backend:
+### New Files Created
+| File | Purpose |
+|---|---|
+| `src/driver/driver.module.ts` | Driver module definition |
+| `src/driver/driver.controller.ts` | Driver REST endpoints (6 endpoints) |
+| `src/driver/driver.service.ts` | Driver business logic (jobs, take, complete, history, earnings) |
+
+### Modified Files
+| File | Changes |
+|---|---|
+| `src/app.module.ts` | Import DriverModule |
+| `src/seller/seller.service.ts` | Add SystemTimeService injection, create DeliveryJob in processOrder transaction |
+
+### Business Rules Enforced
+- DeliveryJob created when seller processes order (Option A, inside transaction)
+- Driver only sees AVAILABLE jobs with order status MENUNGGU_PENGIRIM
+- Driver only sees AVAILABLE job detail (not taken jobs)
+- Conditional updateMany prevents race condition on job take
+- Driver can only complete jobs assigned to themselves
+- Driver can only complete TAKEN jobs with order status SEDANG_DIKIRIM
+- DriverEarning = deliveryFee * 90% (Decimal-safe)
+- SellerIncome = subtotal - discountAmount (not recalculated from OrderItems)
+- All status changes recorded in OrderStatusHistory
+- SystemTimeService used for takenAt, completedAt, order.completedAt
+- DriverEarning and SellerIncome idempotent (unique constraints on deliveryJobId and orderId)
+
+## Next Target: Level 6 Only
+
+Implement Level 6 backend:
 
 ### What to implement
-- DriverModule (jobs, take, complete, history, earnings)
-- DeliveryJob creation and management
-- Driver earning (90% of delivery fee)
-- SellerIncome creation on PESANAN_SELESAI
-- Order status transitions: MENUNGGU_PENGIRIM → SEDANG_DIKIRIM → PESANAN_SELESAI
-- Seed sample data
+- Admin monitoring (users, stores, products, orders, delivery jobs, discounts)
+- Admin summary endpoint
+- System time simulation (simulate next day)
+- Overdue order detection and refund handling
 
 ### What NOT to implement yet
-- ❌ Admin monitoring (Level 6)
-- ❌ System time simulation (Level 6)
-- ❌ Overdue/refund handling (Level 6)
 - ❌ Security hardening (Level 7)
 - ❌ Frontend code
 

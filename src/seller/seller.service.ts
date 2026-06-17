@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { OrderStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { SystemTimeService } from '../system-time/system-time.service';
 import { CreateStoreDto } from './dto/create-store.dto';
 import { UpdateStoreDto } from './dto/update-store.dto';
 import { CreateProductDto } from './dto/create-product.dto';
@@ -13,7 +14,10 @@ import { UpdateProductDto } from './dto/update-product.dto';
 
 @Injectable()
 export class SellerService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private systemTime: SystemTimeService,
+  ) {}
 
   private async getSellerStore(userId: number) {
     const store = await this.prisma.store.findUnique({
@@ -310,6 +314,8 @@ export class SellerService {
       );
     }
 
+    const now = await this.systemTime.getCurrentTime();
+
     return this.prisma.$transaction(async (tx) => {
       const updatedOrder = await tx.order.update({
         where: { id: orderId },
@@ -323,6 +329,15 @@ export class SellerService {
           orderId: orderId,
           status: OrderStatus.MENUNGGU_PENGIRIM,
           changedByUserId: userId,
+        },
+      });
+
+      await tx.deliveryJob.create({
+        data: {
+          orderId: orderId,
+          deliveryMethod: order.deliveryMethod,
+          deliveryFee: order.deliveryFee,
+          status: 'AVAILABLE',
         },
       });
 
