@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateReviewDto } from './dto/create-review.dto';
+import { sanitizeHtml } from '../common/utils/sanitize-html';
 
 @Injectable()
 export class ReviewsService {
@@ -13,19 +14,11 @@ export class ReviewsService {
   }
 
   async create(dto: CreateReviewDto, userId?: number) {
-    const sanitizedComment = dto.comment
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#x27;')
-      .replace(/\//g, '&#x2F;');
-
     return this.prisma.applicationReview.create({
       data: {
-        reviewerName: dto.reviewerName,
+        reviewerName: sanitizeHtml(dto.reviewerName),
         rating: dto.rating,
-        comment: sanitizedComment,
+        comment: sanitizeHtml(dto.comment),
         userId: userId || null,
       },
     });

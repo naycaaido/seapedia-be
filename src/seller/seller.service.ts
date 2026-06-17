@@ -11,6 +11,7 @@ import { CreateStoreDto } from './dto/create-store.dto';
 import { UpdateStoreDto } from './dto/update-store.dto';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
+import { sanitizeHtml } from '../common/utils/sanitize-html';
 
 @Injectable()
 export class SellerService {
@@ -67,8 +68,8 @@ export class SellerService {
       return await this.prisma.store.create({
         data: {
           sellerUserId: userId,
-          name: dto.name,
-          description: dto.description,
+          name: sanitizeHtml(dto.name),
+          description: sanitizeHtml(dto.description),
         },
         include: {
           products: true,
@@ -100,8 +101,8 @@ export class SellerService {
       return await this.prisma.store.update({
         where: { id: store.id },
         data: {
-          ...(dto.name !== undefined && { name: dto.name }),
-          ...(dto.description !== undefined && { description: dto.description }),
+          ...(dto.name !== undefined && { name: sanitizeHtml(dto.name) }),
+          ...(dto.description !== undefined && { description: sanitizeHtml(dto.description) }),
         },
         include: {
           products: true,
@@ -158,8 +159,8 @@ export class SellerService {
     return this.prisma.product.create({
       data: {
         storeId: store.id,
-        name: dto.name,
-        description: dto.description,
+        name: sanitizeHtml(dto.name),
+        description: sanitizeHtml(dto.description),
         price: dto.price,
         stock: dto.stock,
         imageUrl: dto.imageUrl,
@@ -190,8 +191,8 @@ export class SellerService {
     return this.prisma.product.update({
       where: { id: productId },
       data: {
-        ...(dto.name !== undefined && { name: dto.name }),
-        ...(dto.description !== undefined && { description: dto.description }),
+        ...(dto.name !== undefined && { name: sanitizeHtml(dto.name) }),
+        ...(dto.description !== undefined && { description: sanitizeHtml(dto.description) }),
         ...(dto.price !== undefined && { price: dto.price }),
         ...(dto.stock !== undefined && { stock: dto.stock }),
         ...(dto.imageUrl !== undefined && { imageUrl: dto.imageUrl }),

@@ -2,7 +2,7 @@
 
 ## Current Backend Status
 
-**Levels 1, 2, 3, 4, 5, and 6 are complete.** The backend is ready for Level 7.
+**All levels (1-7) are complete.** The backend is ready for submission.
 
 - `npx tsc --noEmit` — passes
 - `npx nest build` — passes
@@ -18,6 +18,7 @@
 | Level 4 | ✅ Complete | Discounts (5), Checkout Update, Seller Process Order (1), Reports (2) |
 | Level 5 | ✅ Complete | Driver Jobs (2), Driver Take/Complete (2), Driver History (1), Driver Earnings (1) |
 | Level 6 | ✅ Complete | Admin Monitoring (9), System Time (2), Refund (2) |
+| Level 7 | ✅ Complete | Security Hardening (Helmet, Rate Limiting, XSS, JWT Safety, DTO Validation, README) |
 
 **Total endpoints: 56**
 
@@ -29,16 +30,18 @@
 - **Validation:** class-validator + class-transformer
 - **API Docs:** Swagger at `/api/docs`
 - **Global prefix:** `/api`
+- **Security:** Helmet, Rate Limiting (@nestjs/throttler), XSS sanitization
 
 ### Key Patterns
-- Global `JwtAuthGuard` + `RolesGuard` via `APP_GUARD`
+- Global `ThrottlerGuard` + `JwtAuthGuard` + `RolesGuard` via `APP_GUARD`
 - `@Public()` decorator for unauthenticated endpoints
+- `@Throttle()` decorator for auth-specific rate limiting (10 req/min)
 - `@ActiveRoles('Buyer')` / `@ActiveRoles('Seller')` / `@ActiveRoles('Driver')` / `@ActiveRoles('Admin')` for role-based access
 - Ownership checks via `ensureOwnership()` in services
 - Prisma transactions for multi-step operations
 - `SystemTimeService` for business timestamps (getCurrentTime, setCurrentTime, nextDay)
 - Centralized discount validation in `DiscountsService`
-- Conditional `updateMany` to prevent race conditions on job take
+- Shared `sanitizeHtml()` utility for XSS prevention
 
 ## Existing Modules
 
@@ -88,6 +91,54 @@
 - Vouchers: DISKON10 (10%, max 50k, min 100k), HEMAT25RB (fixed 25k, min 150k), EXPIRED (expired)
 - Promos: CASHBACK15RB (fixed 15k, min 100k), PROMO5PERSEN (5%)
 
+## Level 7 Implementation Summary
+
+### Security Hardening Applied
+
+| Security Measure | Implementation |
+|---|---|
+| HTTP Security Headers | Helmet middleware in `main.ts` |
+| Rate Limiting | @nestjs/throttler: 10 req/min on login/register, 100 req/min global |
+| JWT Secret Safety | Required from env, no hardcoded fallback, clear error if missing |
+| XSS Sanitization | Shared `sanitizeHtml()` utility applied to review comments, reviewer names, store names/descriptions, product names/descriptions, user full names |
+| Input Validation | Global `ValidationPipe` with `whitelist: true`, `forbidNonWhitelisted: true` |
+| SQL Injection | Prevented by Prisma ORM (no raw SQL) |
+| RBAC | Global `JwtAuthGuard` + `RolesGuard` with `@ActiveRoles()` decorator |
+| Ownership Checks | All resource access validated against authenticated user |
+
+### New Files Created
+| File | Purpose |
+|---|---|
+| `src/common/utils/sanitize-html.ts` | Shared HTML entity escaping utility |
+
+### Modified Files
+| File | Changes |
+|---|---|
+| `src/main.ts` | Added Helmet middleware |
+| `src/app.module.ts` | Added ThrottlerModule + ThrottlerGuard |
+| `src/auth/auth.module.ts` | Removed hardcoded JWT fallback, require env var |
+| `src/auth/auth.controller.ts` | Added @Throttle on login/register |
+| `src/auth/jwt.strategy.ts` | Removed hardcoded JWT fallback, require env var |
+| `src/auth/auth.service.ts` | Added sanitizeHtml for fullName on register |
+| `src/auth/dto/select-role.dto.ts` | Added @IsIn(['Seller', 'Buyer', 'Driver']) |
+| `src/reviews/reviews.service.ts` | Use shared sanitizeHtml, sanitize reviewerName |
+| `src/seller/seller.service.ts` | Added sanitizeHtml for store/product names and descriptions |
+| `src/seller/dto/create-store.dto.ts` | Removed no-op @MinLength(0) |
+| `src/seller/dto/update-store.dto.ts` | Removed no-op @MinLength(0) |
+| `src/discounts/discounts.controller.ts` | Use ValidateDiscountDto for query validation |
+| `src/discounts/dto/validate-discount.dto.ts` | Added @IsNotEmpty, @MaxLength, @Type |
+| `src/discounts/dto/create-voucher.dto.ts` | Added @IsNotEmpty, @MaxLength on name/code/description |
+| `src/discounts/dto/create-promo.dto.ts` | Added @IsNotEmpty, @MaxLength on name/code/description |
+| `README.md` | Full rewrite with documentation |
+| `PROGRESS.md` | Updated with Level 7 status |
+| `TASKS.md` | Added Level 7 task checklist |
+
+### Packages Installed
+| Package | Version | Purpose |
+|---|---|---|
+| `helmet` | ^8.2.0 | HTTP security headers |
+| `@nestjs/throttler` | ^6.5.0 | Rate limiting |
+
 ## Known Risks (Non-blocking)
 
 1. **Cart store lock race condition** — concurrent adds to empty cart could set different storeIds. Acceptable for Level 3.
@@ -97,115 +148,6 @@
 5. **Driver job take race condition** — two drivers could simultaneously call take on same job. Mitigated by conditional `updateMany` with `status=AVAILABLE AND driverId=null`. Only one will succeed. Acceptable for Level 5.
 6. **Concurrent refund calls** — two admin calls simultaneously on same order could both pass validation. Mitigated by unique constraint on `Refund.orderId` — second insert fails with P2002, caught as ConflictException. Acceptable for Level 6.
 
-## Level 4 Implementation Summary
-
-### New Files Created
-| File | Purpose |
-|---|---|
-| `src/discounts/discounts.module.ts` | Discounts module definition |
-| `src/discounts/discounts.controller.ts` | Voucher/Promo CRUD + validation endpoints |
-| `src/discounts/discounts.service.ts` | Centralized discount validation and computation |
-| `src/discounts/dto/create-voucher.dto.ts` | Admin create voucher DTO |
-| `src/discounts/dto/create-promo.dto.ts` | Admin create promo DTO |
-| `src/discounts/dto/validate-discount.dto.ts` | Validate discount code DTO |
-| `src/reports/reports.module.ts` | Reports module definition |
-| `src/reports/reports.controller.ts` | Buyer spending + Seller income report endpoints |
-| `src/reports/reports.service.ts` | Report query logic |
-
-### Modified Files
-| File | Changes |
-|---|---|
-| `src/app.module.ts` | Import DiscountsModule, ReportsModule |
-| `src/checkout/dto/checkout.dto.ts` | Add optional voucherCode/promoCode with mutual exclusion validator |
-| `src/checkout/checkout.module.ts` | Import DiscountsModule |
-| `src/checkout/checkout.service.ts` | Use DiscountsService for discount validation, record voucherId/promoId, decrement remainingUsage |
-| `src/seller/seller.service.ts` | Add SystemTimeService, add processOrder() method |
-| `src/seller/seller.controller.ts` | Add POST /seller/orders/:id/process endpoint |
-| `prisma/seed.ts` | Add DiscountType import, seed vouchers and promos |
-
-### Business Rules Enforced
-- Voucher and Promo cannot be combined in one checkout
-- Expired voucher/promo cannot be used
-- Voucher with zero remaining usage cannot be used
-- Percentage discount capped at maxDiscountAmount
-- Discount amount cannot exceed subtotal
-- Minimum purchase amount enforced
-- Discount validation uses SystemTimeService
-- Seller can only process orders from own store
-- Only SEDANG_DIKEMAS orders can be processed
-- Buyer spending excludes returned orders (status != DIKEMBALIKAN)
-- Seller income report returns 0 until Level 5 creates SellerIncome records
-
-## Level 5 Implementation Summary
-
-### New Files Created
-| File | Purpose |
-|---|---|
-| `src/driver/driver.module.ts` | Driver module definition |
-| `src/driver/driver.controller.ts` | Driver REST endpoints (6 endpoints) |
-| `src/driver/driver.service.ts` | Driver business logic (jobs, take, complete, history, earnings) |
-
-### Modified Files
-| File | Changes |
-|---|---|
-| `src/app.module.ts` | Import DriverModule |
-| `src/seller/seller.service.ts` | Add SystemTimeService injection, create DeliveryJob in processOrder transaction |
-
-### Business Rules Enforced
-- DeliveryJob created when seller processes order (Option A, inside transaction)
-- Driver only sees AVAILABLE jobs with order status MENUNGGU_PENGIRIM
-- Driver only sees AVAILABLE job detail (not taken jobs)
-- Conditional updateMany prevents race condition on job take
-- Driver can only complete jobs assigned to themselves
-- Driver can only complete TAKEN jobs with order status SEDANG_DIKIRIM
-- DriverEarning = deliveryFee * 90% (Decimal-safe)
-- SellerIncome = subtotal - discountAmount (not recalculated from OrderItems)
-- All status changes recorded in OrderStatusHistory
-- SystemTimeService used for takenAt, completedAt, order.completedAt
-- DriverEarning and SellerIncome idempotent (unique constraints on deliveryJobId and orderId)
-
-## Level 6 Implementation Summary
-
-### New Files Created
-| File | Purpose |
-|---|---|
-| `src/admin/admin.module.ts` | Admin module definition |
-| `src/admin/admin.controller.ts` | Admin REST endpoints (13 endpoints) |
-| `src/admin/admin.service.ts` | Admin business logic (monitoring, overdue, refund) |
-
-### Modified Files
-| File | Changes |
-|---|---|
-| `src/app.module.ts` | Import AdminModule |
-| `src/system-time/system-time.service.ts` | Add `setCurrentTime()` and `nextDay()` methods |
-
-### Business Rules Enforced
-- Admin monitoring endpoints require active role Admin
-- Users endpoint excludes passwordHash, includes roles via UserRole
-- Products endpoint includes soft-deleted products (deletedAt)
-- Orders detail includes all relations: items, statusHistory, deliveryJob, voucher/promo, refund
-- Discounts endpoint shows active/expired status based on SystemTimeService
-- SystemTimeService uses upsert pattern for singleton safety
-- Overdue detection: expiredAt <= systemTime, status not in [PESANAN_SELESAI, DIKEMBALIKAN]
-- Refund eligibility: order exists, not completed, not already returned, is overdue
-- Refund amount = order.finalTotal (no recalculation)
-- Refund transaction: order update, statusHistory, refund record, wallet upsert, walletTransaction, deliveryJob update
-- DeliveryJob marked RETURNED on refund (if AVAILABLE or TAKEN)
-- Completed jobs are not refundable (order status would be PESANAN_SELESAI)
-- Refund-all processes each order independently, skips already-refunded with reason
-- Refund idempotent: unique constraint on Refund.orderId prevents duplicates
-- All refunds use SystemTimeService for timestamps
-
-## Next Target: Level 7 Only
-
-Implement Level 7 backend:
-
-### What to implement
-- Security hardening (SQL injection prevention, XSS prevention, input validation, JWT expiration, ownership validation)
-
-### What NOT to implement
-- ❌ Frontend code
-
 ## Key Files to Reference
 
 - `PRD_BACKEND.md` — full PRD with all levels
@@ -214,3 +156,4 @@ Implement Level 7 backend:
 - `TASKS.md` — detailed task checklists
 - `prisma/schema.prisma` — database schema
 - `prisma/seed.ts` — seed data
+- `README.md` — full project documentation

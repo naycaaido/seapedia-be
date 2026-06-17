@@ -6,6 +6,8 @@ import {
   Min,
   IsBoolean,
   IsDateString,
+  MaxLength,
+  IsNotEmpty,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { DiscountType } from '@prisma/client';
@@ -13,15 +15,20 @@ import { DiscountType } from '@prisma/client';
 export class CreatePromoDto {
   @ApiProperty({ example: 'Promo Cashback 20rb' })
   @IsString()
+  @IsNotEmpty()
+  @MaxLength(100)
   name: string;
 
   @ApiProperty({ example: 'CASHBACK20' })
   @IsString()
+  @IsNotEmpty()
+  @MaxLength(50)
   code: string;
 
   @ApiPropertyOptional({ example: 'Cashback Rp 20.000 untuk pembelian minimal Rp 200.000' })
   @IsOptional()
   @IsString()
+  @MaxLength(500)
   description?: string;
 
   @ApiProperty({ enum: DiscountType, example: DiscountType.FIXED_AMOUNT })
