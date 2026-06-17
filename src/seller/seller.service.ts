@@ -190,7 +190,6 @@ export class SellerService {
         ...(dto.price !== undefined && { price: dto.price }),
         ...(dto.stock !== undefined && { stock: dto.stock }),
         ...(dto.imageUrl !== undefined && { imageUrl: dto.imageUrl }),
-        ...(dto.isActive !== undefined && { isActive: dto.isActive }),
       },
     });
   }
@@ -208,13 +207,13 @@ export class SellerService {
       );
     }
 
-    if (!product.isActive) {
+    if (product.deletedAt !== null) {
       throw new BadRequestException('This product is already deactivated.');
     }
 
     return this.prisma.product.update({
       where: { id: productId },
-      data: { isActive: false },
+      data: { deletedAt: new Date() },
     });
   }
 
@@ -235,7 +234,7 @@ export class SellerService {
       };
     }
 
-    const activeProducts = store.products.filter((p) => p.isActive);
+    const activeProducts = store.products.filter((p) => !p.deletedAt);
 
     return {
       hasStore: true,
