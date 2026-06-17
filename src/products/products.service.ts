@@ -7,7 +7,7 @@ export class ProductsService {
 
   async findAll() {
     return this.prisma.product.findMany({
-      where: { isActive: true },
+      where: { deletedAt: null },
       include: {
         store: {
           select: { id: true, name: true },
@@ -27,7 +27,7 @@ export class ProductsService {
       },
     });
 
-    if (!product || !product.isActive) {
+    if (!product || product.deletedAt !== null) {
       throw new NotFoundException('Product not found');
     }
 

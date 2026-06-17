@@ -87,4 +87,24 @@ export class SellerController {
   getDashboard(@Req() req: any) {
     return this.sellerService.getDashboardSummary(req.user.id);
   }
+
+  // --- Orders ---
+
+  @Get('orders')
+  @ApiOperation({ summary: 'List orders for own store' })
+  listOrders(@Req() req: any) {
+    return this.sellerService.listOrders(req.user.id);
+  }
+
+  @Get('orders/:id')
+  @ApiOperation({ summary: 'Get order detail for own store' })
+  getOrder(@Req() req: any, @Param('id', ParseIntPipe) id: number) {
+    return this.sellerService.getOrder(req.user.id, id);
+  }
+
+  @Post('orders/:id/process')
+  @ApiOperation({ summary: 'Process order from SEDANG_DIKEMAS to MENUNGGU_PENGIRIM' })
+  processOrder(@Req() req: any, @Param('id', ParseIntPipe) id: number) {
+    return this.sellerService.processOrder(req.user.id, id);
+  }
 }

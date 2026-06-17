@@ -12,7 +12,6 @@ export class UpdateStoreDto {
   @ApiPropertyOptional({ example: 'Toko yang menjual berbagai kebutuhan rumah tangga.' })
   @IsOptional()
   @IsString()
-  @MinLength(0)
   @MaxLength(500)
   description?: string;
 }

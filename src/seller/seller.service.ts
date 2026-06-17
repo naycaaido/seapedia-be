@@ -4,15 +4,21 @@ import {
   ConflictException,
   BadRequestException,
 } from '@nestjs/common';
+import { OrderStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { SystemTimeService } from '../system-time/system-time.service';
 import { CreateStoreDto } from './dto/create-store.dto';
 import { UpdateStoreDto } from './dto/update-store.dto';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
+import { sanitizeHtml } from '../common/utils/sanitize-html';
 
 @Injectable()
 export class SellerService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private systemTime: SystemTimeService,
+  ) {}
 
   private async getSellerStore(userId: number) {
     const store = await this.prisma.store.findUnique({
@@ -62,8 +68,8 @@ export class SellerService {
       return await this.prisma.store.create({
         data: {
           sellerUserId: userId,
-          name: dto.name,
-          description: dto.description,
+          name: sanitizeHtml(dto.name),
+          description: sanitizeHtml(dto.description),
         },
         include: {
           products: true,
@@ -95,8 +101,8 @@ export class SellerService {
       return await this.prisma.store.update({
         where: { id: store.id },
         data: {
-          ...(dto.name !== undefined && { name: dto.name }),
-          ...(dto.description !== undefined && { description: dto.description }),
+          ...(dto.name !== undefined && { name: sanitizeHtml(dto.name) }),
+          ...(dto.description !== undefined && { description: sanitizeHtml(dto.description) }),
         },
         include: {
           products: true,
@@ -153,8 +159,8 @@ export class SellerService {
     return this.prisma.product.create({
       data: {
         storeId: store.id,
-        name: dto.name,
-        description: dto.description,
+        name: sanitizeHtml(dto.name),
+        description: sanitizeHtml(dto.description),
         price: dto.price,
         stock: dto.stock,
         imageUrl: dto.imageUrl,
@@ -185,12 +191,11 @@ export class SellerService {
     return this.prisma.product.update({
       where: { id: productId },
       data: {
-        ...(dto.name !== undefined && { name: dto.name }),
-        ...(dto.description !== undefined && { description: dto.description }),
+        ...(dto.name !== undefined && { name: sanitizeHtml(dto.name) }),
+        ...(dto.description !== undefined && { description: sanitizeHtml(dto.description) }),
         ...(dto.price !== undefined && { price: dto.price }),
         ...(dto.stock !== undefined && { stock: dto.stock }),
         ...(dto.imageUrl !== undefined && { imageUrl: dto.imageUrl }),
-        ...(dto.isActive !== undefined && { isActive: dto.isActive }),
       },
     });
   }
@@ -208,13 +213,13 @@ export class SellerService {
       );
     }
 
-    if (!product.isActive) {
+    if (product.deletedAt !== null) {
       throw new BadRequestException('This product is already deactivated.');
     }
 
     return this.prisma.product.update({
       where: { id: productId },
-      data: { isActive: false },
+      data: { deletedAt: new Date() },
     });
   }
 
@@ -235,7 +240,7 @@ export class SellerService {
       };
     }
 
-    const activeProducts = store.products.filter((p) => p.isActive);
+    const activeProducts = store.products.filter((p) => !p.deletedAt);
 
     return {
       hasStore: true,
@@ -248,5 +253,96 @@ export class SellerService {
       totalProducts: store.products.length,
       activeProducts: activeProducts.length,
     };
+  }
+
+  async listOrders(userId: number) {
+    const store = await this.ensureOwnership(userId);
+
+    return this.prisma.order.findMany({
+      where: { storeId: store.id },
+      include: {
+        buyer: {
+          select: { id: true, username: true, fullName: true },
+        },
+        items: true,
+        statusHistory: {
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async getOrder(userId: number, orderId: number) {
+    const store = await this.ensureOwnership(userId);
+
+    const order = await this.prisma.order.findFirst({
+      where: { id: orderId, storeId: store.id },
+      include: {
+        buyer: {
+          select: { id: true, username: true, fullName: true },
+        },
+        address: true,
+        items: true,
+        statusHistory: {
+          orderBy: { createdAt: 'desc' },
+        },
+      },
+    });
+
+    if (!order) {
+      throw new NotFoundException('Order not found');
+    }
+
+    return order;
+  }
+
+  async processOrder(userId: number, orderId: number) {
+    const store = await this.ensureOwnership(userId);
+
+    const order = await this.prisma.order.findFirst({
+      where: { id: orderId, storeId: store.id },
+    });
+
+    if (!order) {
+      throw new NotFoundException('Order not found');
+    }
+
+    if (order.status !== OrderStatus.SEDANG_DIKEMAS) {
+      throw new BadRequestException(
+        `Order can only be processed from SEDANG_DIKEMAS status. Current status: ${order.status}`,
+      );
+    }
+
+    const now = await this.systemTime.getCurrentTime();
+
+    return this.prisma.$transaction(async (tx) => {
+      const updatedOrder = await tx.order.update({
+        where: { id: orderId },
+        data: {
+          status: OrderStatus.MENUNGGU_PENGIRIM,
+        },
+      });
+
+      await tx.orderStatusHistory.create({
+        data: {
+          orderId: orderId,
+          status: OrderStatus.MENUNGGU_PENGIRIM,
+          changedByUserId: userId,
+        },
+      });
+
+      await tx.deliveryJob.create({
+        data: {
+          orderId: orderId,
+          deliveryMethod: order.deliveryMethod,
+          deliveryFee: order.deliveryFee,
+          status: 'AVAILABLE',
+        },
+      });
+
+      return updatedOrder;
+    });
   }
 }

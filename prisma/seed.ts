@@ -1,4 +1,4 @@
-import { PrismaClient, RoleName } from '@prisma/client';
+import { PrismaClient, RoleName, DiscountType } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
@@ -196,6 +196,151 @@ async function main() {
         },
       });
     }
+  }
+
+  // Wallets for buyers
+  await prisma.wallet.upsert({
+    where: { userId: buyer.id },
+    update: {},
+    create: { userId: buyer.id, balance: 1000000 },
+  });
+
+  await prisma.wallet.upsert({
+    where: { userId: multiRole.id },
+    update: {},
+    create: { userId: multiRole.id, balance: 500000 },
+  });
+
+  // Addresses for buyers
+  const buyerAddress = await prisma.address.findFirst({
+    where: { buyerId: buyer.id },
+  });
+  if (!buyerAddress) {
+    await prisma.address.create({
+      data: {
+        buyerId: buyer.id,
+        recipientName: 'Pembeli Setia',
+        phone: '08123456789',
+        addressDetail: 'Jl. Merdeka No. 10, Blok B',
+        city: 'Jakarta Selatan',
+        province: 'DKI Jakarta',
+        postalCode: '12190',
+        isDefault: true,
+      },
+    });
+  }
+
+  const multiAddress = await prisma.address.findFirst({
+    where: { buyerId: multiRole.id },
+  });
+  if (!multiAddress) {
+    await prisma.address.create({
+      data: {
+        buyerId: multiRole.id,
+        recipientName: 'Multi Role User',
+        phone: '08987654321',
+        addressDetail: 'Jl. Gatot Subroto No. 25',
+        city: 'Bandung',
+        province: 'Jawa Barat',
+        postalCode: '40231',
+        isDefault: true,
+      },
+    });
+  }
+
+  // SystemSetting singleton
+  const settingCount = await prisma.systemSetting.count();
+  if (settingCount === 0) {
+    await prisma.systemSetting.create({
+      data: {
+        currentDatetime: new Date('2026-01-01T00:00:00Z'),
+      },
+    });
+  }
+
+  // Sample Vouchers
+  const voucher1 = await prisma.voucher.findUnique({ where: { code: 'DISKON10' } });
+  if (!voucher1) {
+    await prisma.voucher.create({
+      data: {
+        name: 'Diskon 10%',
+        code: 'DISKON10',
+        description: 'Voucher diskon 10% untuk semua produk, maksimal Rp 50.000',
+        discountType: DiscountType.PERCENTAGE,
+        discountValue: 10,
+        maxDiscountAmount: 50000,
+        minPurchaseAmount: 100000,
+        remainingUsage: 100,
+        expiryDate: new Date('2026-12-31T23:59:59Z'),
+        isActive: true,
+      },
+    });
+  }
+
+  const voucher2 = await prisma.voucher.findUnique({ where: { code: 'HEMAT25RB' } });
+  if (!voucher2) {
+    await prisma.voucher.create({
+      data: {
+        name: 'Hemat Rp 25.000',
+        code: 'HEMAT25RB',
+        description: 'Potongan langsung Rp 25.000 untuk pembelian minimal Rp 150.000',
+        discountType: DiscountType.FIXED_AMOUNT,
+        discountValue: 25000,
+        minPurchaseAmount: 150000,
+        remainingUsage: 50,
+        expiryDate: new Date('2026-12-31T23:59:59Z'),
+        isActive: true,
+      },
+    });
+  }
+
+  // Expired voucher for testing
+  const expiredVoucher = await prisma.voucher.findUnique({ where: { code: 'EXPIRED' } });
+  if (!expiredVoucher) {
+    await prisma.voucher.create({
+      data: {
+        name: 'Voucher Expired',
+        code: 'EXPIRED',
+        description: 'Voucher yang sudah kedaluwarsa',
+        discountType: DiscountType.PERCENTAGE,
+        discountValue: 20,
+        remainingUsage: 10,
+        expiryDate: new Date('2025-01-01T00:00:00Z'),
+        isActive: true,
+      },
+    });
+  }
+
+  // Sample Promos
+  const promo1 = await prisma.promo.findUnique({ where: { code: 'CASHBACK15RB' } });
+  if (!promo1) {
+    await prisma.promo.create({
+      data: {
+        name: 'Cashback Rp 15.000',
+        code: 'CASHBACK15RB',
+        description: 'Cashback Rp 15.000 untuk pembelian minimal Rp 100.000',
+        discountType: DiscountType.FIXED_AMOUNT,
+        discountValue: 15000,
+        minPurchaseAmount: 100000,
+        expiryDate: new Date('2026-06-30T23:59:59Z'),
+        isActive: true,
+      },
+    });
+  }
+
+  const promo2 = await prisma.promo.findUnique({ where: { code: 'PROMO5PERSEN' } });
+  if (!promo2) {
+    await prisma.promo.create({
+      data: {
+        name: 'Promo 5%',
+        code: 'PROMO5PERSEN',
+        description: 'Diskon 5% tanpa batas maksimum',
+        discountType: DiscountType.PERCENTAGE,
+        discountValue: 5,
+        expiryDate: new Date('2026-12-31T23:59:59Z'),
+        isActive: true,
+      },
+    });
   }
 
   console.log('Seed completed!');

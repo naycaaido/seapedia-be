@@ -10,7 +10,7 @@ export class StoresService {
       where: { id },
       include: {
         products: {
-          where: { isActive: true },
+          where: { deletedAt: null },
           orderBy: { createdAt: 'desc' },
         },
         sellerUser: {
