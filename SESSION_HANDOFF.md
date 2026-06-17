@@ -2,7 +2,7 @@
 
 ## Current Backend Status
 
-**Levels 1, 2, 3, 4, and 5 are complete.** The backend is ready for Level 6.
+**Levels 1, 2, 3, 4, 5, and 6 are complete.** The backend is ready for Level 7.
 
 - `npx tsc --noEmit` — passes
 - `npx nest build` — passes
@@ -17,8 +17,9 @@
 | Level 3 | ✅ Complete | Wallet (3), Addresses (5), Cart (5), Checkout (1), Buyer Orders (2), Seller Orders (2) |
 | Level 4 | ✅ Complete | Discounts (5), Checkout Update, Seller Process Order (1), Reports (2) |
 | Level 5 | ✅ Complete | Driver Jobs (2), Driver Take/Complete (2), Driver History (1), Driver Earnings (1) |
+| Level 6 | ✅ Complete | Admin Monitoring (9), System Time (2), Refund (2) |
 
-**Total endpoints: 43**
+**Total endpoints: 56**
 
 ## Architecture
 
@@ -32,10 +33,10 @@
 ### Key Patterns
 - Global `JwtAuthGuard` + `RolesGuard` via `APP_GUARD`
 - `@Public()` decorator for unauthenticated endpoints
-- `@ActiveRoles('Buyer')` / `@ActiveRoles('Seller')` / `@ActiveRoles('Driver')` for role-based access
+- `@ActiveRoles('Buyer')` / `@ActiveRoles('Seller')` / `@ActiveRoles('Driver')` / `@ActiveRoles('Admin')` for role-based access
 - Ownership checks via `ensureOwnership()` in services
 - Prisma transactions for multi-step operations
-- `SystemTimeService` for business timestamps
+- `SystemTimeService` for business timestamps (getCurrentTime, setCurrentTime, nextDay)
 - Centralized discount validation in `DiscountsService`
 - Conditional `updateMany` to prevent race conditions on job take
 
@@ -58,6 +59,7 @@
 | DiscountsModule | `src/discounts/` | Voucher/Promo CRUD and validation |
 | ReportsModule | `src/reports/` | Buyer spending + Seller income reports |
 | DriverModule | `src/driver/` | Driver delivery workflow (jobs, take, complete, history, earnings) |
+| AdminModule | `src/admin/` | Admin monitoring, system time simulation, overdue/refund handling |
 
 ## Prisma Schema
 
@@ -93,6 +95,7 @@
 3. **Order number collision** — `Math.random()` has low entropy. Very unlikely, caught by unique constraint.
 4. **Voucher remainingUsage race condition** — concurrent checkouts with same voucher could both pass remainingUsage check. Acceptable for Level 4.
 5. **Driver job take race condition** — two drivers could simultaneously call take on same job. Mitigated by conditional `updateMany` with `status=AVAILABLE AND driverId=null`. Only one will succeed. Acceptable for Level 5.
+6. **Concurrent refund calls** — two admin calls simultaneously on same order could both pass validation. Mitigated by unique constraint on `Refund.orderId` — second insert fails with P2002, caught as ConflictException. Acceptable for Level 6.
 
 ## Level 4 Implementation Summary
 
@@ -161,18 +164,46 @@
 - SystemTimeService used for takenAt, completedAt, order.completedAt
 - DriverEarning and SellerIncome idempotent (unique constraints on deliveryJobId and orderId)
 
-## Next Target: Level 6 Only
+## Level 6 Implementation Summary
 
-Implement Level 6 backend:
+### New Files Created
+| File | Purpose |
+|---|---|
+| `src/admin/admin.module.ts` | Admin module definition |
+| `src/admin/admin.controller.ts` | Admin REST endpoints (13 endpoints) |
+| `src/admin/admin.service.ts` | Admin business logic (monitoring, overdue, refund) |
+
+### Modified Files
+| File | Changes |
+|---|---|
+| `src/app.module.ts` | Import AdminModule |
+| `src/system-time/system-time.service.ts` | Add `setCurrentTime()` and `nextDay()` methods |
+
+### Business Rules Enforced
+- Admin monitoring endpoints require active role Admin
+- Users endpoint excludes passwordHash, includes roles via UserRole
+- Products endpoint includes soft-deleted products (deletedAt)
+- Orders detail includes all relations: items, statusHistory, deliveryJob, voucher/promo, refund
+- Discounts endpoint shows active/expired status based on SystemTimeService
+- SystemTimeService uses upsert pattern for singleton safety
+- Overdue detection: expiredAt <= systemTime, status not in [PESANAN_SELESAI, DIKEMBALIKAN]
+- Refund eligibility: order exists, not completed, not already returned, is overdue
+- Refund amount = order.finalTotal (no recalculation)
+- Refund transaction: order update, statusHistory, refund record, wallet upsert, walletTransaction, deliveryJob update
+- DeliveryJob marked RETURNED on refund (if AVAILABLE or TAKEN)
+- Completed jobs are not refundable (order status would be PESANAN_SELESAI)
+- Refund-all processes each order independently, skips already-refunded with reason
+- Refund idempotent: unique constraint on Refund.orderId prevents duplicates
+- All refunds use SystemTimeService for timestamps
+
+## Next Target: Level 7 Only
+
+Implement Level 7 backend:
 
 ### What to implement
-- Admin monitoring (users, stores, products, orders, delivery jobs, discounts)
-- Admin summary endpoint
-- System time simulation (simulate next day)
-- Overdue order detection and refund handling
+- Security hardening (SQL injection prevention, XSS prevention, input validation, JWT expiration, ownership validation)
 
-### What NOT to implement yet
-- ❌ Security hardening (Level 7)
+### What NOT to implement
 - ❌ Frontend code
 
 ## Key Files to Reference

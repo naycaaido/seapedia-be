@@ -10,6 +10,8 @@ PRD_BACKEND.md
 PROGRESS.md
 TASKS.md
 AGENTS.md
+DECISIONS.md
+SESSION_HANDOFF.md
 
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
