@@ -13,6 +13,8 @@ import { AddressesModule } from './addresses/addresses.module';
 import { CartModule } from './cart/cart.module';
 import { CheckoutModule } from './checkout/checkout.module';
 import { OrdersModule } from './orders/orders.module';
+import { DiscountsModule } from './discounts/discounts.module';
+import { ReportsModule } from './reports/reports.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 
@@ -31,6 +33,8 @@ import { RolesGuard } from './common/guards/roles.guard';
     CartModule,
     CheckoutModule,
     OrdersModule,
+    DiscountsModule,
+    ReportsModule,
   ],
   providers: [
     {

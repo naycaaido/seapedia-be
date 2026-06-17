@@ -4,6 +4,7 @@ import {
   ConflictException,
   BadRequestException,
 } from '@nestjs/common';
+import { OrderStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateStoreDto } from './dto/create-store.dto';
 import { UpdateStoreDto } from './dto/update-store.dto';
@@ -290,5 +291,42 @@ export class SellerService {
     }
 
     return order;
+  }
+
+  async processOrder(userId: number, orderId: number) {
+    const store = await this.ensureOwnership(userId);
+
+    const order = await this.prisma.order.findFirst({
+      where: { id: orderId, storeId: store.id },
+    });
+
+    if (!order) {
+      throw new NotFoundException('Order not found');
+    }
+
+    if (order.status !== OrderStatus.SEDANG_DIKEMAS) {
+      throw new BadRequestException(
+        `Order can only be processed from SEDANG_DIKEMAS status. Current status: ${order.status}`,
+      );
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      const updatedOrder = await tx.order.update({
+        where: { id: orderId },
+        data: {
+          status: OrderStatus.MENUNGGU_PENGIRIM,
+        },
+      });
+
+      await tx.orderStatusHistory.create({
+        data: {
+          orderId: orderId,
+          status: OrderStatus.MENUNGGU_PENGIRIM,
+          changedByUserId: userId,
+        },
+      });
+
+      return updatedOrder;
+    });
   }
 }

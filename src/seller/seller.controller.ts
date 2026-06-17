@@ -101,4 +101,10 @@ export class SellerController {
   getOrder(@Req() req: any, @Param('id', ParseIntPipe) id: number) {
     return this.sellerService.getOrder(req.user.id, id);
   }
+
+  @Post('orders/:id/process')
+  @ApiOperation({ summary: 'Process order from SEDANG_DIKEMAS to MENUNGGU_PENGIRIM' })
+  processOrder(@Req() req: any, @Param('id', ParseIntPipe) id: number) {
+    return this.sellerService.processOrder(req.user.id, id);
+  }
 }

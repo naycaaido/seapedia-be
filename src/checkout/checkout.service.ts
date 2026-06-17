@@ -7,6 +7,7 @@ import { Prisma, DeliveryMethod, OrderStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { SystemTimeService } from '../system-time/system-time.service';
 import { CheckoutDto } from './dto/checkout.dto';
+import { DiscountsService } from '../discounts/discounts.service';
 
 const DELIVERY_FEES: Record<DeliveryMethod, number> = {
   INSTANT: 20000,
@@ -19,6 +20,7 @@ export class CheckoutService {
   constructor(
     private prisma: PrismaService,
     private systemTime: SystemTimeService,
+    private discountsService: DiscountsService,
   ) {}
 
   async checkout(userId: number, dto: CheckoutDto) {
@@ -70,11 +72,16 @@ export class CheckoutService {
       new Prisma.Decimal(0),
     );
 
-    const discountAmount = new Prisma.Decimal(0);
+    // Validate and compute discount
+    const activeCode = dto.voucherCode || dto.promoCode;
+    const discount = await this.discountsService.validateAndApply(
+      activeCode,
+      subtotal,
+    );
 
     const deliveryFee = new Prisma.Decimal(DELIVERY_FEES[dto.deliveryMethod]);
 
-    const taxBase = subtotal.sub(discountAmount);
+    const taxBase = subtotal.sub(discount.discountAmount);
 
     const ppnAmount = taxBase.mul(new Prisma.Decimal(0.12));
 
@@ -109,13 +116,15 @@ export class CheckoutService {
             .join(', '),
           deliveryMethod: dto.deliveryMethod,
           subtotal,
-          discountAmount,
+          discountAmount: discount.discountAmount,
           deliveryFee,
           ppnAmount,
           finalTotal,
           status: OrderStatus.SEDANG_DIKEMAS,
           paidAt: now,
           expiredAt,
+          ...(discount.voucherId && { voucherId: discount.voucherId }),
+          ...(discount.promoId && { promoId: discount.promoId }),
         },
       });
 
@@ -174,6 +183,16 @@ export class CheckoutService {
             `Insufficient stock for "${item.product.name}"`,
           );
         }
+      }
+
+      // Decrement voucher remainingUsage inside transaction
+      if (discount.voucherId) {
+        await tx.voucher.update({
+          where: { id: discount.voucherId },
+          data: {
+            remainingUsage: { decrement: 1 },
+          },
+        });
       }
 
       await tx.cartItem.deleteMany({
