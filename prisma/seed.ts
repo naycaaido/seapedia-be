@@ -198,6 +198,66 @@ async function main() {
     }
   }
 
+  // Wallets for buyers
+  await prisma.wallet.upsert({
+    where: { userId: buyer.id },
+    update: {},
+    create: { userId: buyer.id, balance: 1000000 },
+  });
+
+  await prisma.wallet.upsert({
+    where: { userId: multiRole.id },
+    update: {},
+    create: { userId: multiRole.id, balance: 500000 },
+  });
+
+  // Addresses for buyers
+  const buyerAddress = await prisma.address.findFirst({
+    where: { buyerId: buyer.id },
+  });
+  if (!buyerAddress) {
+    await prisma.address.create({
+      data: {
+        buyerId: buyer.id,
+        recipientName: 'Pembeli Setia',
+        phone: '08123456789',
+        addressDetail: 'Jl. Merdeka No. 10, Blok B',
+        city: 'Jakarta Selatan',
+        province: 'DKI Jakarta',
+        postalCode: '12190',
+        isDefault: true,
+      },
+    });
+  }
+
+  const multiAddress = await prisma.address.findFirst({
+    where: { buyerId: multiRole.id },
+  });
+  if (!multiAddress) {
+    await prisma.address.create({
+      data: {
+        buyerId: multiRole.id,
+        recipientName: 'Multi Role User',
+        phone: '08987654321',
+        addressDetail: 'Jl. Gatot Subroto No. 25',
+        city: 'Bandung',
+        province: 'Jawa Barat',
+        postalCode: '40231',
+        isDefault: true,
+      },
+    });
+  }
+
+  // SystemSetting singleton
+  const settingCount = await prisma.systemSetting.count();
+  if (settingCount === 0) {
+    await prisma.systemSetting.create({
+      data: {
+        currentDatetime: new Date('2026-01-01T00:00:00Z'),
+      },
+    });
+  }
+
   console.log('Seed completed!');
   console.log('');
   console.log('Demo Accounts:');

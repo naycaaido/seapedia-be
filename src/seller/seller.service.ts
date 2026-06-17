@@ -248,4 +248,47 @@ export class SellerService {
       activeProducts: activeProducts.length,
     };
   }
+
+  async listOrders(userId: number) {
+    const store = await this.ensureOwnership(userId);
+
+    return this.prisma.order.findMany({
+      where: { storeId: store.id },
+      include: {
+        buyer: {
+          select: { id: true, username: true, fullName: true },
+        },
+        items: true,
+        statusHistory: {
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async getOrder(userId: number, orderId: number) {
+    const store = await this.ensureOwnership(userId);
+
+    const order = await this.prisma.order.findFirst({
+      where: { id: orderId, storeId: store.id },
+      include: {
+        buyer: {
+          select: { id: true, username: true, fullName: true },
+        },
+        address: true,
+        items: true,
+        statusHistory: {
+          orderBy: { createdAt: 'desc' },
+        },
+      },
+    });
+
+    if (!order) {
+      throw new NotFoundException('Order not found');
+    }
+
+    return order;
+  }
 }

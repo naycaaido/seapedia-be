@@ -7,6 +7,12 @@ import { ProductsModule } from './products/products.module';
 import { StoresModule } from './stores/stores.module';
 import { ReviewsModule } from './reviews/reviews.module';
 import { SellerModule } from './seller/seller.module';
+import { SystemTimeModule } from './system-time/system-time.module';
+import { WalletModule } from './wallet/wallet.module';
+import { AddressesModule } from './addresses/addresses.module';
+import { CartModule } from './cart/cart.module';
+import { CheckoutModule } from './checkout/checkout.module';
+import { OrdersModule } from './orders/orders.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 
@@ -19,6 +25,12 @@ import { RolesGuard } from './common/guards/roles.guard';
     StoresModule,
     ReviewsModule,
     SellerModule,
+    SystemTimeModule,
+    WalletModule,
+    AddressesModule,
+    CartModule,
+    CheckoutModule,
+    OrdersModule,
   ],
   providers: [
     {
