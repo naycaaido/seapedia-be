@@ -4,7 +4,8 @@ import {
   ConflictException,
   BadRequestException,
 } from '@nestjs/common';
-import { OrderStatus } from '@prisma/client';
+import { Prisma, OrderStatus } from '../../prisma/generated/client';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { SystemTimeService } from '../system-time/system-time.service';
 import { CreateStoreDto } from './dto/create-store.dto';
@@ -76,8 +77,8 @@ export class SellerService {
         },
       });
     } catch (error) {
-      if (error?.code === 'P2002') {
-        const target = error?.meta?.target as string[] | undefined;
+      if (error instanceof PrismaClientKnownRequestError && error.code === 'P2002') {
+        const target = error.meta?.target as string[] | undefined;
         if (target?.includes('name')) {
           throw new ConflictException(
             'A store with this name already exists. Please choose a different name.',
@@ -109,8 +110,8 @@ export class SellerService {
         },
       });
     } catch (error) {
-      if (error?.code === 'P2002') {
-        const target = error?.meta?.target as string[] | undefined;
+      if (error instanceof PrismaClientKnownRequestError && error.code === 'P2002') {
+        const target = error.meta?.target as string[] | undefined;
         if (target?.includes('name')) {
           throw new ConflictException(
             'A store with this name already exists. Please choose a different name.',

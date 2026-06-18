@@ -3,7 +3,7 @@ import {
   BadRequestException,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma, DeliveryMethod, OrderStatus } from '@prisma/client';
+import { Prisma, DeliveryMethod, OrderStatus } from '../../prisma/generated/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { SystemTimeService } from '../system-time/system-time.service';
 import { CheckoutDto } from './dto/checkout.dto';

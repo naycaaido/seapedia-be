@@ -7,11 +7,11 @@ export class ValidateDiscountDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(50)
-  code: string;
+  code!: string;
 
   @ApiProperty({ example: 150000, description: 'Subtotal before discount' })
   @Type(() => Number)
   @IsNumber()
   @Min(0)
-  subtotal: number;
+  subtotal!: number;
 }

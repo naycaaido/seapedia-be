@@ -6,10 +6,10 @@ export class CreateStoreDto {
   @IsString()
   @MinLength(2)
   @MaxLength(100)
-  name: string;
+  name!: string;
 
   @ApiProperty({ example: 'Toko yang menjual berbagai kebutuhan sehari-hari.' })
   @IsString()
   @MaxLength(500)
-  description: string;
+  description!: string;
 }

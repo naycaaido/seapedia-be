@@ -5,5 +5,5 @@ export class SelectRoleDto {
   @ApiProperty({ example: 'Buyer', description: 'Role to activate', enum: ['Seller', 'Buyer', 'Driver'] })
   @IsString()
   @IsIn(['Seller', 'Buyer', 'Driver'])
-  role: string;
+  role!: string;
 }

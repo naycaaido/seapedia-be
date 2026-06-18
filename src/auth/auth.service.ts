@@ -5,7 +5,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { SelectRoleDto } from './dto/select-role.dto';
-import { RoleName } from '@prisma/client';
+import { RoleName } from '../../prisma/generated/client';
 import { sanitizeHtml } from '../common/utils/sanitize-html';
 
 const VALID_NON_ADMIN_ROLES = [RoleName.Seller, RoleName.Buyer, RoleName.Driver] as const;

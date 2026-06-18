@@ -6,17 +6,17 @@ export class RegisterDto {
   @IsString()
   @MinLength(3)
   @MaxLength(50)
-  username: string;
+  username!: string;
 
   @ApiProperty({ example: 'john@example.com' })
   @IsEmail()
-  email: string;
+  email!: string;
 
   @ApiProperty({ example: 'John Doe' })
   @IsString()
   @MinLength(1)
   @MaxLength(100)
-  fullName: string;
+  fullName!: string;
 
   @ApiProperty({ example: '08123456789' })
   @IsOptional()
@@ -27,11 +27,11 @@ export class RegisterDto {
   @ApiProperty({ example: 'securePassword123' })
   @IsString()
   @MinLength(6)
-  password: string;
+  password!: string;
 
   @ApiProperty({ example: ['Buyer', 'Seller'] })
   @IsArray()
   @IsString({ each: true })
   @ArrayMinSize(1)
-  roles: string[];
+  roles!: string[];
 }

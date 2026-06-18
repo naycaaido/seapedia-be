@@ -3,7 +3,8 @@ import {
   BadRequestException,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma, DiscountType } from '@prisma/client';
+import { Prisma, DiscountType } from '../../prisma/generated/client';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { SystemTimeService } from '../system-time/system-time.service';
 
@@ -234,7 +235,7 @@ export class DiscountsService {
         },
       });
     } catch (error) {
-      if (error?.code === 'P2002') {
+      if (error instanceof PrismaClientKnownRequestError && error.code === 'P2002') {
         throw new BadRequestException(
           'A voucher with this code already exists',
         );
@@ -269,7 +270,7 @@ export class DiscountsService {
         },
       });
     } catch (error) {
-      if (error?.code === 'P2002') {
+      if (error instanceof PrismaClientKnownRequestError && error.code === 'P2002') {
         throw new BadRequestException(
           'A promo with this code already exists',
         );
