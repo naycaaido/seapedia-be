@@ -4,8 +4,8 @@ Multi-role e-commerce marketplace backend built with NestJS, Prisma, PostgreSQL,
 
 ## Tech Stack
 
-- **Framework:** NestJS 10.3
-- **ORM:** Prisma 5.7
+- **Framework:** NestJS 11
+- **ORM:** Prisma 7
 - **Database:** PostgreSQL
 - **Authentication:** JWT (24h expiry) + Passport
 - **Password Hashing:** bcrypt (10 rounds)
