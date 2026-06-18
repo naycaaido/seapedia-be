@@ -8,7 +8,17 @@ export class ProductsService {
   async findAll() {
     return this.prisma.product.findMany({
       where: { deletedAt: null },
-      include: {
+      select: {
+        id: true,
+        storeId: true,
+        name: true,
+        description: true,
+        price: true,
+        stock: true,
+        imageUrl: true,
+        deletedAt: true,
+        createdAt: true,
+        updatedAt: true,
         store: {
           select: { id: true, name: true },
         },
@@ -20,7 +30,17 @@ export class ProductsService {
   async findOne(id: number) {
     const product = await this.prisma.product.findUnique({
       where: { id },
-      include: {
+      select: {
+        id: true,
+        storeId: true,
+        name: true,
+        description: true,
+        price: true,
+        stock: true,
+        imageUrl: true,
+        deletedAt: true,
+        createdAt: true,
+        updatedAt: true,
         store: {
           select: { id: true, name: true, description: true },
         },

@@ -1,5 +1,6 @@
-import { IsString, MinLength, MaxLength, IsNumber, Min, IsOptional } from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsString, MinLength, MaxLength, IsNumber, Min } from 'class-validator';
+import { Transform } from 'class-transformer';
+import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateProductDto {
   @ApiProperty({ example: 'Headphone Bluetooth' })
@@ -15,18 +16,14 @@ export class CreateProductDto {
   description!: string;
 
   @ApiProperty({ example: 350000 })
+  @Transform(({ value }) => Number(value))
   @IsNumber()
   @Min(0)
   price!: number;
 
   @ApiProperty({ example: 25 })
+  @Transform(({ value }) => Number(value))
   @IsNumber()
   @Min(0)
   stock!: number;
-
-  @ApiPropertyOptional({ example: 'https://example.com/image.jpg' })
-  @IsOptional()
-  @IsString()
-  @MaxLength(500)
-  imageUrl?: string;
 }

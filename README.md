@@ -45,9 +45,13 @@ DATABASE_URL="postgresql://postgres:password@localhost:5432/seapedia?schema=publ
 JWT_SECRET="your-secure-random-string-here"
 PORT=3000
 FRONTEND_URL="http://localhost:5173"
+SUPABASE_URL="https://your-project-id.supabase.co"
+SUPABASE_SERVICE_ROLE_KEY="your-service-role-key"
+SUPABASE_STORAGE_BUCKET="products"
 ```
 
 > **Important:** `JWT_SECRET` is required. The app will fail to start if it is missing.
+> **Supabase:** `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are required for product image uploads.
 
 ### Database Setup
 
@@ -141,9 +145,9 @@ Open `http://localhost:3000/api/docs` in your browser.
 | POST | `/api/seller/store` | Create store |
 | PATCH | `/api/seller/store` | Update store |
 | GET | `/api/seller/products` | List own products |
-| POST | `/api/seller/products` | Create product |
+| POST | `/api/seller/products` | Create product (multipart/form-data, image required) |
 | GET | `/api/seller/products/:id` | View own product |
-| PATCH | `/api/seller/products/:id` | Update product |
+| PATCH | `/api/seller/products/:id` | Update product (multipart/form-data, image optional) |
 | DELETE | `/api/seller/products/:id` | Soft delete product |
 | GET | `/api/seller/dashboard` | Dashboard summary |
 | GET | `/api/seller/orders` | Store orders |
@@ -196,6 +200,7 @@ Open `http://localhost:3000/api/docs` in your browser.
 - Products are never hard-deleted.
 - `deletedAt = null` means visible; `deletedAt != null` means deleted.
 - Deleted products are hidden from public catalog and cannot be added to cart.
+- Soft-deleted products cannot be updated.
 
 ### Single-Store Cart
 
@@ -236,6 +241,40 @@ Checkout -> SEDANG_DIKEMAS -> (Seller process) -> MENUNGGU_PENGIRIM
 - Overdue orders (past `expiredAt` and not completed/returned) can be refunded.
 - Refund amount equals `order.finalTotal`.
 - Refund updates wallet balance, creates wallet transaction, and records refund.
+
+### Product Image Upload
+
+- Product images are stored in Supabase Storage, not local filesystem.
+- **Create product:** Image is required. Upload via `multipart/form-data` with field name `image`.
+- **Update product:** Image is optional. If provided, replaces the existing image.
+- **Accepted MIME types:** `image/jpeg`, `image/png`, `image/webp`
+- **Max file size:** 5MB
+- **Object path:** `products/seller-<sellerId>/product-<timestamp>-<random>.<ext>`
+- **Public bucket:** The Supabase Storage bucket must be set to public for `getPublicUrl` to work.
+- **Soft delete:** Deleted products retain their image files (no auto-deletion).
+- **Database fields:** `imageUrl` (public URL for display) and `imagePath` (storage path for management, hidden from public responses).
+
+#### Create Product Example (curl)
+
+```bash
+curl -X POST http://localhost:3000/api/seller/products \
+  -H "Authorization: Bearer <token>" \
+  -F "name=Headphone Bluetooth" \
+  -F "description=Headphone nirkabel dengan noise cancellation." \
+  -F "price=350000" \
+  -F "stock=25" \
+  -F "image=@/path/to/image.jpg"
+```
+
+#### Update Product Example (curl)
+
+```bash
+curl -X PATCH http://localhost:3000/api/seller/products/1 \
+  -H "Authorization: Bearer <token>" \
+  -F "name=Headphone Bluetooth V2" \
+  -F "price=300000" \
+  -F "image=@/path/to/new-image.jpg"
+```
 
 ## Security
 
