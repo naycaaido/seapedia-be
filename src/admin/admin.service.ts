@@ -191,9 +191,12 @@ export class AdminService {
     const previousTime = await this.systemTime.getCurrentTime();
     const newSetting = await this.systemTime.nextDay(adminUserId);
 
+    const refundResult = await this.refundAllOverdueOrders(adminUserId);
+
     return {
       previousTime,
       newTime: newSetting.currentDatetime,
+      refundResult,
     };
   }
 
