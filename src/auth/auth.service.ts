@@ -5,6 +5,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { SelectRoleDto } from './dto/select-role.dto';
+import { AddRoleDto } from './dto/add-role.dto';
 import { RoleName } from '../../prisma/generated/client';
 import { sanitizeHtml } from '../common/utils/sanitize-html';
 
@@ -122,6 +123,54 @@ export class AuthService {
     }
 
     return this.buildUserResponse(user, dto.role);
+  }
+
+  async addRole(userId: number, dto: AddRoleDto, currentActiveRole?: string | null) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        userRoles: {
+          include: { role: true },
+        },
+      },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    const alreadyHasRole = user.userRoles.some(
+      (ur) => ur.role.name === (dto.role as RoleName),
+    );
+    if (alreadyHasRole) {
+      return this.buildUserResponse(user, currentActiveRole);
+    }
+
+    const roleRecord = await this.prisma.role.findUnique({
+      where: { name: dto.role as RoleName },
+    });
+
+    if (!roleRecord) {
+      throw new BadRequestException('Role not found in system');
+    }
+
+    await this.prisma.userRole.create({
+      data: {
+        userId,
+        roleId: roleRecord.id,
+      },
+    });
+
+    const updatedUser = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        userRoles: {
+          include: { role: true },
+        },
+      },
+    });
+
+    return this.buildUserResponse(updatedUser!, currentActiveRole);
   }
 
   private buildUserResponse(user: any, activeRole?: string | null) {

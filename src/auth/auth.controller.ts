@@ -5,6 +5,7 @@ import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { SelectRoleDto } from './dto/select-role.dto';
+import { AddRoleDto } from './dto/add-role.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { Public } from '../common/decorators/public.decorator';
 
@@ -51,5 +52,13 @@ export class AuthController {
   @ApiOperation({ summary: 'Select active role for current session' })
   selectRole(@Req() req: any, @Body() dto: SelectRoleDto) {
     return this.authService.selectRole(req.user.id, dto);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('roles')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Add a new role to the current account' })
+  addRole(@Req() req: any, @Body() dto: AddRoleDto) {
+    return this.authService.addRole(req.user.id, dto, req.user.activeRole);
   }
 }
