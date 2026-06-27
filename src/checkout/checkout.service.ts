@@ -15,6 +15,12 @@ const DELIVERY_FEES: Record<DeliveryMethod, number> = {
   REGULAR: 8000,
 };
 
+const SLA_HOURS: Record<DeliveryMethod, number> = {
+  INSTANT: 6,
+  NEXT_DAY: 24,
+  REGULAR: 72,
+};
+
 @Injectable()
 export class CheckoutService {
   constructor(
@@ -93,7 +99,9 @@ export class CheckoutService {
       );
     }
 
-    const expiredAt = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+    const expiredAt = new Date(
+      now.getTime() + SLA_HOURS[dto.deliveryMethod] * 60 * 60 * 1000,
+    );
 
     const orderNumber = this.generateOrderNumber(now);
 
