@@ -5,9 +5,19 @@ import { PrismaService } from '../prisma/prisma.service';
 export class ProductsService {
   constructor(private prisma: PrismaService) {}
 
-  async findAll() {
+  async findAll(search?: string) {
     return this.prisma.product.findMany({
-      where: { deletedAt: null },
+      where: {
+        deletedAt: null,
+        ...(search?.trim()
+          ? {
+              OR: [
+                { name: { contains: search.trim(), mode: 'insensitive' } },
+                { description: { contains: search.trim(), mode: 'insensitive' } },
+              ],
+            }
+          : {}),
+      },
       select: {
         id: true,
         storeId: true,
