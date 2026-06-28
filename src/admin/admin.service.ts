@@ -4,7 +4,8 @@ import {
   BadRequestException,
   ConflictException,
 } from '@nestjs/common';
-import { OrderStatus, DeliveryJobStatus, Prisma } from '@prisma/client';
+import { OrderStatus, DeliveryJobStatus, Prisma } from '../../prisma/generated/client';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { SystemTimeService } from '../system-time/system-time.service';
 
@@ -190,9 +191,12 @@ export class AdminService {
     const previousTime = await this.systemTime.getCurrentTime();
     const newSetting = await this.systemTime.nextDay(adminUserId);
 
+    const refundResult = await this.refundAllOverdueOrders(adminUserId);
+
     return {
       previousTime,
       newTime: newSetting.currentDatetime,
+      refundResult,
     };
   }
 
@@ -337,8 +341,8 @@ export class AdminService {
           where: { orderId },
         });
       });
-    } catch (error: any) {
-      if (error?.code === 'P2002') {
+    } catch (error: unknown) {
+      if (error instanceof PrismaClientKnownRequestError && error.code === 'P2002') {
         throw new ConflictException('This order has already been refunded');
       }
       throw error;

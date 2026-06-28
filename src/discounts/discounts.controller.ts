@@ -7,7 +7,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger'
 import { DiscountsService } from './discounts.service';
 import { ActiveRoles } from '../common/decorators/active-role.decorator';
 import { Public } from '../common/decorators/public.decorator';
-import { Prisma } from '@prisma/client';
+import { Prisma } from '../../prisma/generated/client';
 import { ValidateDiscountDto } from './dto/validate-discount.dto';
 
 @ApiTags('Discounts')

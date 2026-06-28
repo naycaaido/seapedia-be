@@ -6,19 +6,19 @@ export class CreateAddressDto {
   @IsString()
   @MinLength(1)
   @MaxLength(100)
-  recipientName: string;
+  recipientName!: string;
 
   @ApiProperty({ example: '08123456789' })
   @IsString()
   @MinLength(1)
   @MaxLength(20)
-  phone: string;
+  phone!: string;
 
   @ApiProperty({ example: 'Jl. Sudirman No. 123, Blok A' })
   @IsString()
   @MinLength(1)
   @MaxLength(500)
-  addressDetail: string;
+  addressDetail!: string;
 
   @ApiPropertyOptional({ example: 'Jakarta Selatan' })
   @IsOptional()

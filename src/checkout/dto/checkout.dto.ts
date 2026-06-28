@@ -10,7 +10,7 @@ import {
   ValidationArguments,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { DeliveryMethod } from '@prisma/client';
+import { DeliveryMethod } from '../../../prisma/generated/client';
 
 @ValidatorConstraint({ name: 'DiscountCodeMutuallyExclusive', async: false })
 class DiscountCodeMutuallyExclusive implements ValidatorConstraintInterface {
@@ -31,7 +31,7 @@ export class CheckoutDto {
   @ApiProperty({ example: 1, description: 'Address ID belonging to the buyer' })
   @IsNumber()
   @Min(1)
-  addressId: number;
+  addressId!: number;
 
   @ApiProperty({
     enum: DeliveryMethod,
@@ -39,7 +39,7 @@ export class CheckoutDto {
     description: 'Delivery method',
   })
   @IsEnum(DeliveryMethod)
-  deliveryMethod: DeliveryMethod;
+  deliveryMethod!: DeliveryMethod;
 
   @ApiPropertyOptional({
     example: 'DISKON10',

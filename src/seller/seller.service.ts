@@ -4,20 +4,24 @@ import {
   ConflictException,
   BadRequestException,
 } from '@nestjs/common';
-import { OrderStatus } from '@prisma/client';
+import { Prisma, OrderStatus } from '../../prisma/generated/client';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { SystemTimeService } from '../system-time/system-time.service';
+import { SupabaseStorageService } from '../storage/supabase-storage.service';
 import { CreateStoreDto } from './dto/create-store.dto';
 import { UpdateStoreDto } from './dto/update-store.dto';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { sanitizeHtml } from '../common/utils/sanitize-html';
+import { MulterFile } from '../common/types/multer-file';
 
 @Injectable()
 export class SellerService {
   constructor(
     private prisma: PrismaService,
     private systemTime: SystemTimeService,
+    private storageService: SupabaseStorageService,
   ) {}
 
   private async getSellerStore(userId: number) {
@@ -76,8 +80,8 @@ export class SellerService {
         },
       });
     } catch (error) {
-      if (error?.code === 'P2002') {
-        const target = error?.meta?.target as string[] | undefined;
+      if (error instanceof PrismaClientKnownRequestError && error.code === 'P2002') {
+        const target = error.meta?.target as string[] | undefined;
         if (target?.includes('name')) {
           throw new ConflictException(
             'A store with this name already exists. Please choose a different name.',
@@ -109,8 +113,8 @@ export class SellerService {
         },
       });
     } catch (error) {
-      if (error?.code === 'P2002') {
-        const target = error?.meta?.target as string[] | undefined;
+      if (error instanceof PrismaClientKnownRequestError && error.code === 'P2002') {
+        const target = error.meta?.target as string[] | undefined;
         if (target?.includes('name')) {
           throw new ConflictException(
             'A store with this name already exists. Please choose a different name.',
@@ -146,7 +150,7 @@ export class SellerService {
     return product;
   }
 
-  async createProduct(userId: number, dto: CreateProductDto) {
+  async createProduct(userId: number, dto: CreateProductDto, file: MulterFile) {
     const store = await this.ensureOwnership(userId);
 
     if (dto.price < 0) {
@@ -156,19 +160,31 @@ export class SellerService {
       throw new BadRequestException('Stock must not be negative.');
     }
 
-    return this.prisma.product.create({
-      data: {
-        storeId: store.id,
-        name: sanitizeHtml(dto.name),
-        description: sanitizeHtml(dto.description),
-        price: dto.price,
-        stock: dto.stock,
-        imageUrl: dto.imageUrl,
-      },
-    });
+    let uploadedImage: { imageUrl: string; imagePath: string } | null = null;
+
+    try {
+      uploadedImage = await this.storageService.uploadProductImage(userId, file);
+
+      return await this.prisma.product.create({
+        data: {
+          storeId: store.id,
+          name: sanitizeHtml(dto.name),
+          description: sanitizeHtml(dto.description),
+          price: dto.price,
+          stock: dto.stock,
+          imageUrl: uploadedImage.imageUrl,
+          imagePath: uploadedImage.imagePath,
+        },
+      });
+    } catch (error) {
+      if (uploadedImage) {
+        await this.storageService.deleteProductImage(uploadedImage.imagePath);
+      }
+      throw error;
+    }
   }
 
-  async updateProduct(userId: number, productId: number, dto: UpdateProductDto) {
+  async updateProduct(userId: number, productId: number, dto: UpdateProductDto, file?: MulterFile) {
     const store = await this.ensureOwnership(userId);
 
     const product = await this.prisma.product.findFirst({
@@ -181,6 +197,10 @@ export class SellerService {
       );
     }
 
+    if (product.deletedAt !== null) {
+      throw new BadRequestException('Cannot update a deactivated product.');
+    }
+
     if (dto.price !== undefined && dto.price < 0) {
       throw new BadRequestException('Price must not be negative.');
     }
@@ -188,16 +208,39 @@ export class SellerService {
       throw new BadRequestException('Stock must not be negative.');
     }
 
-    return this.prisma.product.update({
-      where: { id: productId },
-      data: {
-        ...(dto.name !== undefined && { name: sanitizeHtml(dto.name) }),
-        ...(dto.description !== undefined && { description: sanitizeHtml(dto.description) }),
-        ...(dto.price !== undefined && { price: dto.price }),
-        ...(dto.stock !== undefined && { stock: dto.stock }),
-        ...(dto.imageUrl !== undefined && { imageUrl: dto.imageUrl }),
-      },
-    });
+    let uploadedImage: { imageUrl: string; imagePath: string } | null = null;
+    const oldImagePath = product.imagePath;
+
+    if (file) {
+      uploadedImage = await this.storageService.uploadProductImage(userId, file);
+    }
+
+    try {
+      const updatedProduct = await this.prisma.product.update({
+        where: { id: productId },
+        data: {
+          ...(dto.name !== undefined && { name: sanitizeHtml(dto.name) }),
+          ...(dto.description !== undefined && { description: sanitizeHtml(dto.description) }),
+          ...(dto.price !== undefined && { price: dto.price }),
+          ...(dto.stock !== undefined && { stock: dto.stock }),
+          ...(uploadedImage && {
+            imageUrl: uploadedImage.imageUrl,
+            imagePath: uploadedImage.imagePath,
+          }),
+        },
+      });
+
+      if (oldImagePath && uploadedImage) {
+        await this.storageService.deleteProductImage(oldImagePath);
+      }
+
+      return updatedProduct;
+    } catch (error) {
+      if (uploadedImage) {
+        await this.storageService.deleteProductImage(uploadedImage.imagePath);
+      }
+      throw error;
+    }
   }
 
   async deleteProduct(userId: number, productId: number) {

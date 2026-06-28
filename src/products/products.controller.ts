@@ -1,5 +1,5 @@
-import { Controller, Get, Param, ParseIntPipe } from '@nestjs/common';
-import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { Controller, Get, Param, ParseIntPipe, Query } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { ProductsService } from './products.service';
 import { Public } from '../common/decorators/public.decorator';
 
@@ -11,8 +11,9 @@ export class ProductsController {
   @Public()
   @Get()
   @ApiOperation({ summary: 'List all active products' })
-  findAll() {
-    return this.productsService.findAll();
+  @ApiQuery({ name: 'search', required: false, type: String, description: 'Search products by name or description' })
+  findAll(@Query('search') search?: string) {
+    return this.productsService.findAll(search);
   }
 
   @Public()

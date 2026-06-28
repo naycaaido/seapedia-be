@@ -10,20 +10,20 @@ import {
   IsNotEmpty,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { DiscountType } from '@prisma/client';
+import { DiscountType } from '../../../prisma/generated/client';
 
 export class CreateVoucherDto {
   @ApiProperty({ example: 'Diskon 10%' })
   @IsString()
   @IsNotEmpty()
   @MaxLength(100)
-  name: string;
+  name!: string;
 
   @ApiProperty({ example: 'DISKON10' })
   @IsString()
   @IsNotEmpty()
   @MaxLength(50)
-  code: string;
+  code!: string;
 
   @ApiPropertyOptional({ example: 'Voucher diskon 10% untuk semua produk' })
   @IsOptional()
@@ -33,12 +33,12 @@ export class CreateVoucherDto {
 
   @ApiProperty({ enum: DiscountType, example: DiscountType.PERCENTAGE })
   @IsEnum(DiscountType)
-  discountType: DiscountType;
+  discountType!: DiscountType;
 
   @ApiProperty({ example: 10 })
   @IsNumber()
   @Min(0)
-  discountValue: number;
+  discountValue!: number;
 
   @ApiPropertyOptional({ example: 50000 })
   @IsOptional()
@@ -55,11 +55,11 @@ export class CreateVoucherDto {
   @ApiProperty({ example: 100 })
   @IsNumber()
   @Min(0)
-  remainingUsage: number;
+  remainingUsage!: number;
 
   @ApiProperty({ example: '2026-12-31T23:59:59Z' })
   @IsDateString()
-  expiryDate: string;
+  expiryDate!: string;
 
   @ApiPropertyOptional({ default: true })
   @IsOptional()

@@ -5,10 +5,10 @@ export class AddCartItemDto {
   @ApiProperty({ example: 1 })
   @IsNumber()
   @Min(1)
-  productId: number;
+  productId!: number;
 
   @ApiProperty({ example: 2 })
   @IsNumber()
   @Min(1)
-  quantity: number;
+  quantity!: number;
 }

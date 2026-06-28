@@ -6,17 +6,17 @@ export class CreateReviewDto {
   @IsString()
   @MinLength(1)
   @MaxLength(100)
-  reviewerName: string;
+  reviewerName!: string;
 
   @ApiProperty({ example: 5, description: 'Rating from 1 to 5' })
   @IsInt()
   @Min(1)
   @Max(5)
-  rating: number;
+  rating!: number;
 
   @ApiProperty({ example: 'Great marketplace platform!' })
   @IsString()
   @MinLength(1)
   @MaxLength(1000)
-  comment: string;
+  comment!: string;
 }

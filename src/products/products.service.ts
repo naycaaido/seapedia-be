@@ -5,10 +5,30 @@ import { PrismaService } from '../prisma/prisma.service';
 export class ProductsService {
   constructor(private prisma: PrismaService) {}
 
-  async findAll() {
+  async findAll(search?: string) {
     return this.prisma.product.findMany({
-      where: { deletedAt: null },
-      include: {
+      where: {
+        deletedAt: null,
+        ...(search?.trim()
+          ? {
+              OR: [
+                { name: { contains: search.trim(), mode: 'insensitive' } },
+                { description: { contains: search.trim(), mode: 'insensitive' } },
+              ],
+            }
+          : {}),
+      },
+      select: {
+        id: true,
+        storeId: true,
+        name: true,
+        description: true,
+        price: true,
+        stock: true,
+        imageUrl: true,
+        deletedAt: true,
+        createdAt: true,
+        updatedAt: true,
         store: {
           select: { id: true, name: true },
         },
@@ -20,7 +40,17 @@ export class ProductsService {
   async findOne(id: number) {
     const product = await this.prisma.product.findUnique({
       where: { id },
-      include: {
+      select: {
+        id: true,
+        storeId: true,
+        name: true,
+        description: true,
+        price: true,
+        stock: true,
+        imageUrl: true,
+        deletedAt: true,
+        createdAt: true,
+        updatedAt: true,
         store: {
           select: { id: true, name: true, description: true },
         },

@@ -3,7 +3,7 @@ import {
   BadRequestException,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma, DeliveryMethod, OrderStatus } from '@prisma/client';
+import { Prisma, DeliveryMethod, OrderStatus } from '../../prisma/generated/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { SystemTimeService } from '../system-time/system-time.service';
 import { CheckoutDto } from './dto/checkout.dto';
@@ -13,6 +13,12 @@ const DELIVERY_FEES: Record<DeliveryMethod, number> = {
   INSTANT: 20000,
   NEXT_DAY: 12000,
   REGULAR: 8000,
+};
+
+const SLA_HOURS: Record<DeliveryMethod, number> = {
+  INSTANT: 6,
+  NEXT_DAY: 24,
+  REGULAR: 72,
 };
 
 @Injectable()
@@ -93,7 +99,9 @@ export class CheckoutService {
       );
     }
 
-    const expiredAt = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+    const expiredAt = new Date(
+      now.getTime() + SLA_HOURS[dto.deliveryMethod] * 60 * 60 * 1000,
+    );
 
     const orderNumber = this.generateOrderNumber(now);
 

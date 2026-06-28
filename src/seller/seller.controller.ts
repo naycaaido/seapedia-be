@@ -8,14 +8,25 @@ import {
   Param,
   ParseIntPipe,
   Req,
+  UploadedFile,
+  UseInterceptors,
+  BadRequestException,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBearerAuth,
+  ApiConsumes,
+  ApiBody,
+} from '@nestjs/swagger';
 import { SellerService } from './seller.service';
 import { CreateStoreDto } from './dto/create-store.dto';
 import { UpdateStoreDto } from './dto/update-store.dto';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { ActiveRoles } from '../common/decorators/active-role.decorator';
+import { MulterFile } from '../common/types/multer-file';
 
 @ApiTags('Seller')
 @ApiBearerAuth()
@@ -59,19 +70,75 @@ export class SellerController {
   }
 
   @Post('products')
+  @UseInterceptors(
+    FileInterceptor('image', {
+      limits: { fileSize: 5 * 1024 * 1024 },
+      fileFilter: (req, file, cb) => {
+        if (['image/jpeg', 'image/png', 'image/webp'].includes(file.mimetype)) {
+          cb(null, true);
+        } else {
+          cb(new BadRequestException('Invalid file type. Accepted types: image/jpeg, image/png, image/webp'), false);
+        }
+      },
+    }),
+  )
   @ApiOperation({ summary: 'Create product under own store' })
-  createProduct(@Req() req: any, @Body() dto: CreateProductDto) {
-    return this.sellerService.createProduct(req.user.id, dto);
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['name', 'description', 'price', 'stock', 'image'],
+      properties: {
+        name: { type: 'string', example: 'Headphone Bluetooth' },
+        description: { type: 'string', example: 'Headphone nirkabel dengan noise cancellation.' },
+        price: { type: 'number', example: 350000 },
+        stock: { type: 'number', example: 25 },
+        image: { type: 'string', format: 'binary' },
+      },
+    },
+  })
+  createProduct(
+    @Req() req: any,
+    @Body() dto: CreateProductDto,
+    @UploadedFile() file: MulterFile,
+  ) {
+    return this.sellerService.createProduct(req.user.id, dto, file);
   }
 
   @Patch('products/:id')
+  @UseInterceptors(
+    FileInterceptor('image', {
+      limits: { fileSize: 5 * 1024 * 1024 },
+      fileFilter: (req, file, cb) => {
+        if (['image/jpeg', 'image/png', 'image/webp'].includes(file.mimetype)) {
+          cb(null, true);
+        } else {
+          cb(new BadRequestException('Invalid file type. Accepted types: image/jpeg, image/png, image/webp'), false);
+        }
+      },
+    }),
+  )
   @ApiOperation({ summary: 'Update own product' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', example: 'Headphone Bluetooth V2' },
+        description: { type: 'string', example: 'Headphone nirkabel dengan noise cancellation v2.' },
+        price: { type: 'number', example: 300000 },
+        stock: { type: 'number', example: 50 },
+        image: { type: 'string', format: 'binary' },
+      },
+    },
+  })
   updateProduct(
     @Req() req: any,
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateProductDto,
+    @UploadedFile() file?: MulterFile,
   ) {
-    return this.sellerService.updateProduct(req.user.id, id, dto);
+    return this.sellerService.updateProduct(req.user.id, id, dto, file);
   }
 
   @Delete('products/:id')
