@@ -1,324 +1,299 @@
 # SEAPEDIA Backend
 
-Multi-role e-commerce marketplace backend built with NestJS, Prisma, PostgreSQL, and JWT authentication.
+Multi-role seafood marketplace backend built with NestJS, Prisma, PostgreSQL, and JWT authentication.
+
+## Overview
+
+SEAPEDIA backend is a NestJS REST API for a multi-role seafood marketplace. It serves a separate frontend application and handles all business logic, data persistence, file storage, and authorization.
+
+**Roles:**
+- **Admin** — system monitoring, user management, discounts, time simulation, overdue refunds
+- **Buyer** — wallet, addresses, cart, checkout, orders, spending reports
+- **Seller** — store management, product CRUD (with image upload), order processing, income reports
+- **Driver** — delivery job discovery, pickup, completion, earnings
+
+**Domains:**
+- Authentication & role management
+- Public product catalog & reviews
+- Seller store & product management (with Supabase image upload)
+- Buyer wallet, cart, checkout & orders
+- Voucher & promo discounts
+- Driver delivery workflow
+- Admin dashboard, system time simulation, overdue refunds
 
 ## Tech Stack
 
 - **Framework:** NestJS 11
-- **ORM:** Prisma 7
-- **Database:** PostgreSQL
-- **Authentication:** JWT (24h expiry) + Passport
+- **ORM:** Prisma 7 (with generated client at `prisma/generated/`)
+- **Database:** PostgreSQL via `pg` driver
+- **Authentication:** JWT (24h expiry) + Passport + Passport JWT
 - **Password Hashing:** bcrypt (10 rounds)
-- **Validation:** class-validator + class-transformer
-- **API Docs:** Swagger/OpenAPI at `/api/docs`
-- **Security:** Helmet, Rate Limiting (Throttler), XSS sanitization
+- **Validation:** `class-validator` + `class-transformer` (global `ValidationPipe` with `whitelist: true`)
+- **API Docs:** Swagger/OpenAPI via `@nestjs/swagger`
+- **Security:** Helmet, Rate Limiting (`@nestjs/throttler`: 100 req/min global, 10 req/min on auth)
+- **File Storage:** Supabase Storage (`@supabase/supabase-js`)
+- **Config:** `@nestjs/config` (loads `.env`)
+- **Other:** `reflect-metadata`, `rxjs`
 
-## Features by Level
+## Requirements
 
-| Level | Features |
-|-------|----------|
-| 1 | Public catalog, Auth (register/login/logout/profile/select-role), Reviews |
-| 2 | Seller store and product management, Product soft delete |
-| 3 | Buyer wallet, addresses, cart (single-store), checkout with Prisma transaction |
-| 4 | Voucher/Promo discounts, Seller order processing, Reports |
-| 5 | Driver delivery workflow (take/complete jobs, earnings) |
-| 6 | Admin monitoring, System time simulation, Overdue refund handling |
-| 7 | Security hardening (Helmet, rate limiting, XSS sanitization, input validation) |
+- **Node.js** >= 18
+- **npm** (comes with Node.js)
+- **PostgreSQL** database (local or remote)
+- **Supabase project** with a **public storage bucket** — required only if you need product image uploads. The API runs without it but image features will fail.
 
-## Setup
+## Environment Variables
 
-### Prerequisites
+Copy `.env.example` to `.env` and fill in your values. All variables are required unless noted as optional.
 
-- Node.js >= 18
-- PostgreSQL
+| Variable | Required | Purpose | Example |
+|----------|----------|---------|---------|
+| `DATABASE_URL` | Yes | PostgreSQL connection string | `postgresql://postgres:password@localhost:5432/seapedia?schema=public` |
+| `JWT_SECRET` | Yes | Secret key for signing JWT tokens. Generate a secure random string (e.g. `openssl rand -hex 32`). The app will **fail to start** if missing. | `a1b2c3d4e5f6...` (64 hex chars) |
+| `PORT` | No (default 3000) | Port the server listens on | `3000` |
+| `FRONTEND_URL` | Yes | Allowed CORS origin. Must match the deployed frontend URL exactly. | `http://localhost:5173` |
+| `SUPABASE_URL` | Only for image upload | Your Supabase project URL | `https://your-project-id.supabase.co` |
+| `SUPABASE_SERVICE_ROLE_KEY` | Only for image upload | Supabase service role key (not anon key) — required for server-side storage operations | `eyJhbGciOiJIUzI1NiIs...` |
+| `SUPABASE_STORAGE_BUCKET` | No (default `products`) | Name of the Supabase Storage bucket for product images | `products` |
 
-### Environment
+> **Important:** `JWT_SECRET` is mandatory. The app throws a clear error on startup if missing.
+> **Supabase:** `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are only needed for product image upload. Other API features work without them.
+
+## Quick Start
 
 ```bash
+# 1. Install dependencies
+npm install
+
+# 2. Create environment file and edit with your values
 cp .env.example .env
-```
 
-Edit `.env` with your database credentials and a secure JWT secret:
-
-```
-DATABASE_URL="postgresql://postgres:password@localhost:5432/seapedia?schema=public"
-JWT_SECRET="your-secure-random-string-here"
-PORT=3000
-FRONTEND_URL="http://localhost:5173"
-SUPABASE_URL="https://your-project-id.supabase.co"
-SUPABASE_SERVICE_ROLE_KEY="your-service-role-key"
-SUPABASE_STORAGE_BUCKET="products"
-```
-
-> **Important:** `JWT_SECRET` is required. The app will fail to start if it is missing.
-> **Supabase:** `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are required for product image uploads.
-
-### Database Setup
-
-```bash
+# 3. Generate Prisma client
 npx prisma generate
+
+# 4. Push schema to your PostgreSQL database (creates tables)
 npx prisma db push
+
+# 5. Seed the database with demo data
 npm run db:seed
-```
 
-### Run Development Server
-
-```bash
+# 6. Start the development server (hot reload)
 npm run start:dev
 ```
 
-The API runs at `http://localhost:3000/api`.
+- **API base URL:** `http://localhost:3000/api`
+- **Swagger docs:** `http://localhost:3000/api/docs`
 
-### Swagger Documentation
-
-Open `http://localhost:3000/api/docs` in your browser.
-
-## Seed Data
-
-| Account | Username | Password | Role(s) |
-|---------|----------|----------|---------|
-| Admin | admin | password123 | Admin |
-| Seller 1 | tokoindah | password123 | Seller |
-| Seller 2 | elektronikku | password123 | Seller |
-| Buyer | pembeli | password123 | Buyer |
-| Driver | supir | password123 | Driver |
-| Multi-role | multiuser | password123 | Seller + Buyer |
-
-- Buyer wallet: Rp 1.000.000
-- Multi wallet: Rp 500.000
-- System time: 2026-01-01T00:00:00Z
-- Vouchers: DISKON10 (10%), HEMAT25RB (fixed 25k), EXPIRED (expired)
-- Promos: CASHBACK15RB (fixed 15k), PROMO5PERSEN (5%)
-
-## API Endpoints Summary
-
-### Public (No Auth)
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/auth/register` | Register new user |
-| POST | `/api/auth/login` | Login |
-| GET | `/api/products` | List active products |
-| GET | `/api/products/:id` | Product detail |
-| GET | `/api/stores/:id` | Store detail |
-| GET | `/api/reviews` | List reviews |
-| POST | `/api/reviews` | Submit review |
-| GET | `/api/discounts/vouchers` | List active vouchers |
-| GET | `/api/discounts/promos` | List active promos |
-
-### Authenticated
-
-| Method | Endpoint | Role | Description |
-|--------|----------|------|-------------|
-| POST | `/api/auth/logout` | Any | Logout |
-| GET | `/api/auth/me` | Any | Profile |
-| POST | `/api/auth/select-role` | Any | Switch active role |
-
-### Buyer
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/wallet` | Wallet balance |
-| POST | `/api/wallet/top-up` | Top up wallet |
-| GET | `/api/wallet/transactions` | Transaction history |
-| GET | `/api/addresses` | List addresses |
-| POST | `/api/addresses` | Create address |
-| PATCH | `/api/addresses/:id` | Update address |
-| DELETE | `/api/addresses/:id` | Delete address |
-| PATCH | `/api/addresses/:id/default` | Set default address |
-| GET | `/api/cart` | View cart |
-| POST | `/api/cart/items` | Add to cart |
-| PATCH | `/api/cart/items/:id` | Update cart item |
-| DELETE | `/api/cart/items/:id` | Remove cart item |
-| DELETE | `/api/cart/clear` | Clear cart |
-| POST | `/api/checkout` | Checkout |
-| GET | `/api/orders` | My orders |
-| GET | `/api/orders/:id` | Order detail |
-| GET | `/api/discounts/validate` | Validate discount code |
-| GET | `/api/buyer/reports/spending` | Spending report |
-
-### Seller
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/seller/store` | View own store |
-| POST | `/api/seller/store` | Create store |
-| PATCH | `/api/seller/store` | Update store |
-| GET | `/api/seller/products` | List own products |
-| POST | `/api/seller/products` | Create product (multipart/form-data, image required) |
-| GET | `/api/seller/products/:id` | View own product |
-| PATCH | `/api/seller/products/:id` | Update product (multipart/form-data, image optional) |
-| DELETE | `/api/seller/products/:id` | Soft delete product |
-| GET | `/api/seller/dashboard` | Dashboard summary |
-| GET | `/api/seller/orders` | Store orders |
-| GET | `/api/seller/orders/:id` | Order detail |
-| POST | `/api/seller/orders/:id/process` | Process order |
-| GET | `/api/seller/reports/income` | Income report |
-
-### Driver
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/driver/jobs` | Available jobs |
-| GET | `/api/driver/jobs/:id` | Job detail |
-| POST | `/api/driver/jobs/:id/take` | Take job |
-| POST | `/api/driver/jobs/:id/complete` | Complete job |
-| GET | `/api/driver/history` | Delivery history |
-| GET | `/api/driver/earnings` | Earnings summary |
-
-### Admin
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/admin/summary` | Dashboard summary |
-| GET | `/api/admin/users` | List users |
-| GET | `/api/admin/stores` | List stores |
-| GET | `/api/admin/products` | List products |
-| GET | `/api/admin/orders` | List orders |
-| GET | `/api/admin/orders/:id` | Order detail |
-| GET | `/api/admin/delivery-jobs` | List delivery jobs |
-| GET | `/api/admin/discounts` | List discounts |
-| GET | `/api/admin/overdue-orders` | Overdue orders |
-| GET | `/api/admin/system-time` | Current system time |
-| POST | `/api/admin/system-time/simulate-next-day` | Advance time 1 day |
-| POST | `/api/admin/orders/:id/refund` | Refund order |
-| POST | `/api/admin/overdue-orders/refund-all` | Refund all overdue |
-| POST | `/api/admin/vouchers` | Create voucher |
-| POST | `/api/admin/promos` | Create promo |
-
-## Business Rules
-
-### Active Role Authorization
-
-- Users can own multiple roles (Seller, Buyer, Driver) but only one is active at a time.
-- Active role is stored in the JWT payload, not in the database.
-- Role-specific endpoints verify the active role server-side.
-- Single-role users auto-select their role on login.
-
-### Product Soft Delete
-
-- Products are never hard-deleted.
-- `deletedAt = null` means visible; `deletedAt != null` means deleted.
-- Deleted products are hidden from public catalog and cannot be added to cart.
-- Soft-deleted products cannot be updated.
-
-### Single-Store Cart
-
-- A cart can only contain products from one store.
-- Adding a product from a different store is rejected until the cart is cleared.
-
-### Checkout Calculation
-
-```
-tax_base = subtotal - discount
-ppn = tax_base * 12%
-final_total = tax_base + delivery_fee + ppn
-```
-
-Delivery fee is not included in the PPN calculation.
-
-### Discount Rules
-
-- Voucher and Promo cannot be combined in one checkout.
-- Expired or zero-usage vouchers are rejected.
-- Percentage discounts are capped at `maxDiscountAmount`.
-
-### Delivery Workflow
-
-```
-Checkout -> SEDANG_DIKEMAS -> (Seller process) -> MENUNGGU_PENGIRIM
--> (Driver take) -> SEDANG_DIKIRIM -> (Driver complete) -> PESANAN_SELESAI
-```
-
-### System Time Simulation
-
-- Business time comes from `SystemSetting.currentDatetime`.
-- Admin can advance time by 1 day via POST `/admin/system-time/simulate-next-day`.
-- Used for voucher/promo validation, overdue detection, and checkout timestamps.
-
-### Refund Flow
-
-- Overdue orders (past `expiredAt` and not completed/returned) can be refunded.
-- Refund amount equals `order.finalTotal`.
-- Refund updates wallet balance, creates wallet transaction, and records refund.
-
-### Product Image Upload
-
-- Product images are stored in Supabase Storage, not local filesystem.
-- **Create product:** Image is required. Upload via `multipart/form-data` with field name `image`.
-- **Update product:** Image is optional. If provided, replaces the existing image.
-- **Accepted MIME types:** `image/jpeg`, `image/png`, `image/webp`
-- **Max file size:** 5MB
-- **Object path:** `products/seller-<sellerId>/product-<timestamp>-<random>.<ext>`
-- **Public bucket:** The Supabase Storage bucket must be set to public for `getPublicUrl` to work.
-- **Soft delete:** Deleted products retain their image files (no auto-deletion).
-- **Database fields:** `imageUrl` (public URL for display) and `imagePath` (storage path for management, hidden from public responses).
-
-#### Create Product Example (curl)
+## Prisma / Database Setup
 
 ```bash
-curl -X POST http://localhost:3000/api/seller/products \
-  -H "Authorization: Bearer <token>" \
-  -F "name=Headphone Bluetooth" \
-  -F "description=Headphone nirkabel dengan noise cancellation." \
-  -F "price=350000" \
-  -F "stock=25" \
-  -F "image=@/path/to/image.jpg"
+# Generate the Prisma client (required after every schema change)
+npx prisma generate
+
+# Push schema to database (creates/updates tables directly — fast for development)
+npx prisma db push
+
+# Alternative: use migrations (prisma/migrations/ already exists)
+npx prisma migrate dev
+
+# Seed the database with demo accounts, products, discounts
+npm run db:seed
+
+# Open Prisma Studio to browse data visually
+npm run db:studio
 ```
 
-#### Update Product Example (curl)
+**Reset local database:** Drop the database (or truncate all tables), then run `npx prisma db push` and `npm run db:seed` again. There is no dedicated reset script.
 
-```bash
-curl -X PATCH http://localhost:3000/api/seller/products/1 \
-  -H "Authorization: Bearer <token>" \
-  -F "name=Headphone Bluetooth V2" \
-  -F "price=300000" \
-  -F "image=@/path/to/new-image.jpg"
+Seed files are at `prisma/seed.ts`.
+
+## Demo Accounts
+
+Created by `npm run db:seed`. All use password `password123`.
+
+| Account | Username | Password | Role(s) | Notes |
+|---------|----------|----------|---------|-------|
+| Admin | `admin` | `password123` | Admin | Full system access |
+| Seller 1 | `tokoindah` | `password123` | Seller | Store: Toko Indah (3 products) |
+| Seller 2 | `elektronikku` | `password123` | Seller | Store: Elektronikku (4 products) |
+| Buyer | `pembeli` | `password123` | Buyer | Wallet: Rp 1.000.000, has address |
+| Driver | `supir` | `password123` | Driver | No active jobs initially |
+| Multi-role | `multiuser` | `password123` | Seller + Buyer | Wallet: Rp 500.000, has address, store: Multi Store (2 products) |
+
+**Additional seed data:**
+- Buyer wallets: Rp 1.000.000 (pembeli), Rp 500.000 (multiuser)
+- Sample reviews (4 reviews from guest users)
+- Vouchers: `DISKON10` (10% off, max Rp 50k), `HEMAT25RB` (fixed Rp 25k off), `EXPIRED` (already expired)
+- Promos: `CASHBACK15RB` (fixed Rp 15k), `PROMO5PERSEN` (5% off)
+- System time: `2026-01-01T00:00:00Z` (simulated, not real clock)
+
+## Available Scripts
+
+| Script | Command | Purpose |
+|--------|---------|---------|
+| `npm run start:dev` | `nest start --watch` | Development server with hot reload |
+| `npm run build` | `nest build` | Compile TypeScript to `dist/` |
+| `npm run start:prod` | `node dist/main` | Run compiled production build |
+| `npm start` | `nest start` | Start without watch |
+| `npm run lint` | `eslint ".../*.ts" --fix` | Lint and auto-fix TypeScript files |
+| `npm test` | `jest` | Run Jest test suite |
+| `npm run db:generate` | `prisma generate` | Generate Prisma client |
+| `npm run db:push` | `prisma db push` | Push schema to DB |
+| `npm run db:migrate` | `prisma migrate dev` | Run database migrations |
+| `npm run db:seed` | `ts-node prisma/seed.ts` | Seed database with demo data |
+| `npm run db:studio` | `prisma studio` | Open Prisma Studio GUI |
+
+## API Documentation
+
+Interactive Swagger/OpenAPI docs are available at:
+
 ```
+http://localhost:3000/api/docs
+```
+
+- Requires the backend server to be running.
+- Protected endpoints require a **Bearer token**. Use the `/api/auth/login` endpoint or Swagger's "Authorize" button to set the token.
+- The docs are generated from `@nestjs/swagger` decorators and reflect the actual request/response schemas.
+- For full endpoint details, use Swagger — this README only describes high-level flows.
+
+## CORS and Frontend Connection
+
+CORS is configured in `src/main.ts`:
+
+```ts
+app.enableCors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  credentials: true,
+});
+```
+
+- `FRONTEND_URL` in `.env` controls which origin is allowed.
+- For local development, set `FRONTEND_URL=http://localhost:5173` (the default Vite port).
+- In production, `FRONTEND_URL` must match the deployed frontend origin exactly.
+- The frontend's `VITE_API_BASE_URL` should point to the backend API base URL (e.g. `http://localhost:3000/api` locally).
+
+## Image Upload / Supabase Notes
+
+Product images are stored in **Supabase Storage**, not on the local filesystem.
+
+- Create product: image **required** via `multipart/form-data` field `image`
+- Update product: image optional; replaces existing if provided
+- Accepted types: `image/jpeg`, `image/png`, `image/webp`
+- Max file size: 5 MB
+- Object path: `products/seller-<sellerId>/product-<timestamp>-<random>.<ext>`
+- The bucket **must be public** for `getPublicUrl()` to return accessible URLs.
+- Soft-deleted product images are **not** automatically deleted.
+- Database stores both `imageUrl` (public display URL) and `imagePath` (internal storage path).
+
+**If Supabase is not configured,** product image upload endpoints return a 500 error. Other API features (auth, products without images, checkout, etc.) continue to work.
+
+## Production Build / Deployment
+
+1. Set all environment variables on your hosting provider (see [Environment Variables](#environment-variables) above).
+2. Ensure `DATABASE_URL` points to your production PostgreSQL database.
+3. Run Prisma setup:
+   ```bash
+   npx prisma generate
+   npx prisma db push    # or: npx prisma migrate deploy
+   ```
+4. (Optional) Seed demo data — skip for production unless needed.
+5. Build:
+   ```bash
+   npm run build
+   ```
+6. Start:
+   ```bash
+   npm run start:prod
+   ```
+7. Configure `FRONTEND_URL` to match your deployed frontend origin.
+8. Configure `JWT_SECRET` with a strong random secret.
+9. Configure Supabase env vars if image upload is needed.
+10. Verify the API responds at `https://your-domain.com/api` and Swagger at `/api/docs`.
+
+## Manual Demo Flow
+
+Walk through these steps after running `npm run start:dev`:
+
+**Guest (no auth)**
+- Browse active products: `GET /api/products`
+- View product detail: `GET /api/products/:id`
+- Read reviews: `GET /api/reviews`
+- View store info: `GET /api/stores/:id`
+- List active vouchers/promos: `GET /api/discounts/vouchers`, `GET /api/discounts/promos`
+
+**Authentication**
+- Register a new user: `POST /api/auth/register` (roles: `["Seller"]`, `["Buyer"]`, `["Driver"]`, or `["Seller", "Buyer"]` for multi-role — Admin role is auto-assigned, not registerable)
+- Login: `POST /api/auth/login` with `username` and `password`
+- Multi-role users can switch active role: `POST /api/auth/select-role`
+- View profile: `GET /api/auth/me`
+
+**Buyer flow**
+
+Login as `pembeli` / `password123`.
+1. Check wallet balance: `GET /api/wallet`
+2. Top up wallet: `POST /api/wallet/top-up`
+3. Manage addresses: `GET/POST/PATCH/DELETE /api/addresses`
+4. Browse products: `GET /api/products`
+5. Add to cart: `POST /api/cart/items`
+6. View cart: `GET /api/cart`
+7. Validate a discount code: `GET /api/discounts/validate?code=DISKON10&subtotal=200000`
+8. Checkout: `POST /api/checkout` (uses wallet balance)
+9. View orders: `GET /api/orders`
+10. View spending report: `GET /api/buyer/reports/spending`
+
+**Seller flow**
+
+Login as `tokoindah` / `password123`.
+1. Create or view store: `POST` or `GET /api/seller/store`
+2. List own products: `GET /api/seller/products`
+3. Create product (with image): `POST /api/seller/products` (multipart/form-data)
+4. View store orders: `GET /api/seller/orders`
+5. Process an order: `POST /api/seller/orders/:id/process`
+6. View income report: `GET /api/seller/reports/income`
+7. View dashboard: `GET /api/seller/dashboard`
+
+**Driver flow**
+
+Login as `supir` / `password123`.
+1. Browse available jobs: `GET /api/driver/jobs` (orders processed by seller become available)
+2. Take a job: `POST /api/driver/jobs/:id/take`
+3. Complete delivery: `POST /api/driver/jobs/:id/complete`
+4. View delivery history: `GET /api/driver/history`
+5. View earnings: `GET /api/driver/earnings`
+
+**Admin flow**
+
+Login as `admin` / `password123`.
+1. View dashboard summary: `GET /api/admin/summary`
+2. List users/stores/products/orders: admin management endpoints
+3. View overdue orders: `GET /api/admin/overdue-orders`
+4. Create vouchers & promos: `POST /api/admin/vouchers`, `POST /api/admin/promos`
+5. Simulate next day (for testing overdue refunds): `POST /api/admin/system-time/simulate-next-day`
+6. Refund an order: `POST /api/admin/orders/:id/refund`
+7. Bulk refund overdue orders: `POST /api/admin/overdue-orders/refund-all`
 
 ## Security
 
-- **SQL Injection:** Prevented by Prisma ORM (no raw SQL).
-- **XSS:** User-generated content (reviews, store/product names/descriptions, user full names) is sanitized by escaping HTML entities.
+- **SQL Injection:** Prevented by Prisma ORM parameterized queries (no raw SQL).
+- **XSS:** User-generated content (reviews, store/product names/descriptions, full names) is sanitized via HTML entity escaping.
 - **Validation:** Global `ValidationPipe` with `whitelist: true` and `forbidNonWhitelisted: true`.
-- **JWT:** 24-hour expiry, secret from environment variable (required).
-- **RBAC:** Global `JwtAuthGuard` + `RolesGuard` with `@ActiveRoles()` decorator.
+- **JWT:** 24-hour expiry; secret loaded from `JWT_SECRET` env var (server fails on missing secret).
+- **RBAC:** Global `JwtAuthGuard` + `RolesGuard` with `@ActiveRoles()` decorator; single-role users auto-select on login.
 - **Ownership:** All resource access is validated against the authenticated user's ownership.
-- **Rate Limiting:** Auth endpoints (login, register) limited to 10 requests per 60 seconds. Global limit of 100 requests per 60 seconds.
-- **HTTP Headers:** Helmet middleware adds security headers (X-Content-Type-Options, X-Frame-Options, etc.).
-- **CORS:** Configurable via `FRONTEND_URL` environment variable.
+- **Rate Limiting:** 10 req/min on auth endpoints (login, register); 100 req/min global.
+- **HTTP Headers:** Helmet middleware sets standard security headers (`X-Content-Type-Options`, `X-Frame-Options`, etc.).
+- **CORS:** Confined to the origin set in `FRONTEND_URL` env var.
+- **Registration:** Admin role cannot be self-assigned during registration.
 
-## Testing Checklist
+## Troubleshooting
 
-### Auth
-- [ ] Register with valid data returns JWT
-- [ ] Register with Admin role is rejected
-- [ ] Login with valid credentials returns JWT without passwordHash
-- [ ] Login with invalid credentials returns 401
-- [ ] Profile returns user data without passwordHash
-- [ ] Select role validates ownership
-
-### Role Authorization
-- [ ] Buyer cannot access Seller endpoints (403)
-- [ ] Seller cannot access Buyer endpoints (403)
-- [ ] Driver cannot access Admin endpoints (403)
-- [ ] Non-admin cannot access Admin endpoints (403)
-
-### Security
-- [ ] XSS payloads in review comment are escaped
-- [ ] SQL-like payloads in login are handled safely
-- [ ] Rate limiting triggers after 10 login attempts per minute
-- [ ] Helmet headers present in response
-- [ ] JWT_SECRET missing causes clear startup error
-
-### Ownership
-- [ ] Seller A cannot access Seller B's products
-- [ ] Buyer A cannot access Buyer B's addresses
-- [ ] Driver cannot complete another driver's job
-
-### Checkout
-- [ ] Empty cart checkout fails
-- [ ] Insufficient balance checkout fails
-- [ ] Deleted product in cart fails
-- [ ] Insufficient stock checkout fails
-- [ ] Both voucherCode and promoCode rejected
+| Problem | Likely Cause | Fix |
+|---------|--------------|-----|
+| `PrismaClientInitializationError` | Prisma client not generated | Run `npx prisma generate` |
+| `Can't reach database server` | `DATABASE_URL` invalid or PostgreSQL not running | Verify connection string and that PostgreSQL is running |
+| `JWT_SECRET is required` | Missing or empty `JWT_SECRET` in `.env` | Set a secure random string in `.env` |
+| `CORS error` in browser | `FRONTEND_URL` does not match the frontend origin | Set `FRONTEND_URL` to the exact URL serving the frontend |
+| `Supabase Storage not configured` error | Missing `SUPABASE_URL` or `SUPABASE_SERVICE_ROLE_KEY` | Set Supabase env vars or skip image upload features |
+| No data or empty lists | Database not seeded | Run `npm run db:seed` |
+| `EADDRINUSE :::3000` | Port 3000 already in use | Kill the other process or change `PORT` in `.env` |
+| Auth returns 401 | Wrong credentials or expired token | Use demo credentials from the table above or re-login for a fresh token |
