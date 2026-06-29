@@ -87,6 +87,53 @@ export class SupabaseStorageService {
     };
   }
 
+  async uploadProfilePhoto(
+    userId: number,
+    file: MulterFile,
+  ): Promise<{ imageUrl: string; imagePath: string }> {
+    if (!file) {
+      throw new BadRequestException('Profile photo is required.');
+    }
+
+    if (!ALLOWED_MIME_TYPES.includes(file.mimetype as any)) {
+      throw new BadRequestException(
+        `Invalid file type. Accepted types: ${ALLOWED_MIME_TYPES.join(', ')}`,
+      );
+    }
+
+    if (file.size > MAX_FILE_SIZE) {
+      throw new BadRequestException(
+        `File too large. Maximum size is ${MAX_FILE_SIZE / (1024 * 1024)}MB.`,
+      );
+    }
+
+    const supabase = this.getClient();
+    const ext = MIME_TO_EXT[file.mimetype];
+    const random = randomBytes(8).toString('hex');
+    const timestamp = Date.now();
+    const path = `profile-photos/user-${userId}/${timestamp}-${random}.${ext}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from(this.bucket)
+      .upload(path, file.buffer, {
+        contentType: file.mimetype,
+        upsert: false,
+      });
+
+    if (uploadError) {
+      throw new BadRequestException(`Failed to upload profile photo: ${uploadError.message}`);
+    }
+
+    const { data: urlData } = supabase.storage
+      .from(this.bucket)
+      .getPublicUrl(path);
+
+    return {
+      imageUrl: urlData.publicUrl,
+      imagePath: path,
+    };
+  }
+
   async deleteProductImage(imagePath: string): Promise<void> {
     if (!imagePath) return;
 

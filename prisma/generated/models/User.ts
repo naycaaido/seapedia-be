@@ -41,6 +41,7 @@ export type UserMinAggregateOutputType = {
   passwordHash: string | null
   fullName: string | null
   phone: string | null
+  profileImageUrl: string | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -52,6 +53,7 @@ export type UserMaxAggregateOutputType = {
   passwordHash: string | null
   fullName: string | null
   phone: string | null
+  profileImageUrl: string | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -63,6 +65,7 @@ export type UserCountAggregateOutputType = {
   passwordHash: number
   fullName: number
   phone: number
+  profileImageUrl: number
   createdAt: number
   updatedAt: number
   _all: number
@@ -84,6 +87,7 @@ export type UserMinAggregateInputType = {
   passwordHash?: true
   fullName?: true
   phone?: true
+  profileImageUrl?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -95,6 +99,7 @@ export type UserMaxAggregateInputType = {
   passwordHash?: true
   fullName?: true
   phone?: true
+  profileImageUrl?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -106,6 +111,7 @@ export type UserCountAggregateInputType = {
   passwordHash?: true
   fullName?: true
   phone?: true
+  profileImageUrl?: true
   createdAt?: true
   updatedAt?: true
   _all?: true
@@ -204,6 +210,7 @@ export type UserGroupByOutputType = {
   passwordHash: string
   fullName: string
   phone: string | null
+  profileImageUrl: string | null
   createdAt: Date
   updatedAt: Date
   _count: UserCountAggregateOutputType | null
@@ -238,6 +245,7 @@ export type UserWhereInput = {
   passwordHash?: Prisma.StringFilter<"User"> | string
   fullName?: Prisma.StringFilter<"User"> | string
   phone?: Prisma.StringNullableFilter<"User"> | string | null
+  profileImageUrl?: Prisma.StringNullableFilter<"User"> | string | null
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
   userRoles?: Prisma.UserRoleListRelationFilter
@@ -261,6 +269,7 @@ export type UserOrderByWithRelationInput = {
   passwordHash?: Prisma.SortOrder
   fullName?: Prisma.SortOrder
   phone?: Prisma.SortOrderInput | Prisma.SortOrder
+  profileImageUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   userRoles?: Prisma.UserRoleOrderByRelationAggregateInput
@@ -287,6 +296,7 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   passwordHash?: Prisma.StringFilter<"User"> | string
   fullName?: Prisma.StringFilter<"User"> | string
   phone?: Prisma.StringNullableFilter<"User"> | string | null
+  profileImageUrl?: Prisma.StringNullableFilter<"User"> | string | null
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
   userRoles?: Prisma.UserRoleListRelationFilter
@@ -310,6 +320,7 @@ export type UserOrderByWithAggregationInput = {
   passwordHash?: Prisma.SortOrder
   fullName?: Prisma.SortOrder
   phone?: Prisma.SortOrderInput | Prisma.SortOrder
+  profileImageUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.UserCountOrderByAggregateInput
@@ -329,6 +340,7 @@ export type UserScalarWhereWithAggregatesInput = {
   passwordHash?: Prisma.StringWithAggregatesFilter<"User"> | string
   fullName?: Prisma.StringWithAggregatesFilter<"User"> | string
   phone?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
+  profileImageUrl?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"User"> | Date | string
 }
@@ -339,6 +351,7 @@ export type UserCreateInput = {
   passwordHash: string
   fullName: string
   phone?: string | null
+  profileImageUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   userRoles?: Prisma.UserRoleCreateNestedManyWithoutUserInput
@@ -362,6 +375,7 @@ export type UserUncheckedCreateInput = {
   passwordHash: string
   fullName: string
   phone?: string | null
+  profileImageUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   userRoles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutUserInput
@@ -384,6 +398,7 @@ export type UserUpdateInput = {
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
   fullName?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  profileImageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   userRoles?: Prisma.UserRoleUpdateManyWithoutUserNestedInput
@@ -407,6 +422,7 @@ export type UserUncheckedUpdateInput = {
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
   fullName?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  profileImageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   userRoles?: Prisma.UserRoleUncheckedUpdateManyWithoutUserNestedInput
@@ -430,6 +446,7 @@ export type UserCreateManyInput = {
   passwordHash: string
   fullName: string
   phone?: string | null
+  profileImageUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -440,6 +457,7 @@ export type UserUpdateManyMutationInput = {
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
   fullName?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  profileImageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -451,6 +469,7 @@ export type UserUncheckedUpdateManyInput = {
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
   fullName?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  profileImageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -462,6 +481,7 @@ export type UserCountOrderByAggregateInput = {
   passwordHash?: Prisma.SortOrder
   fullName?: Prisma.SortOrder
   phone?: Prisma.SortOrder
+  profileImageUrl?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -477,6 +497,7 @@ export type UserMaxOrderByAggregateInput = {
   passwordHash?: Prisma.SortOrder
   fullName?: Prisma.SortOrder
   phone?: Prisma.SortOrder
+  profileImageUrl?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -488,6 +509,7 @@ export type UserMinOrderByAggregateInput = {
   passwordHash?: Prisma.SortOrder
   fullName?: Prisma.SortOrder
   phone?: Prisma.SortOrder
+  profileImageUrl?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -696,6 +718,7 @@ export type UserCreateWithoutUserRolesInput = {
   passwordHash: string
   fullName: string
   phone?: string | null
+  profileImageUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   store?: Prisma.StoreCreateNestedOneWithoutSellerUserInput
@@ -718,6 +741,7 @@ export type UserUncheckedCreateWithoutUserRolesInput = {
   passwordHash: string
   fullName: string
   phone?: string | null
+  profileImageUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   store?: Prisma.StoreUncheckedCreateNestedOneWithoutSellerUserInput
@@ -755,6 +779,7 @@ export type UserUpdateWithoutUserRolesInput = {
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
   fullName?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  profileImageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   store?: Prisma.StoreUpdateOneWithoutSellerUserNestedInput
@@ -777,6 +802,7 @@ export type UserUncheckedUpdateWithoutUserRolesInput = {
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
   fullName?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  profileImageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   store?: Prisma.StoreUncheckedUpdateOneWithoutSellerUserNestedInput
@@ -798,6 +824,7 @@ export type UserCreateWithoutReviewsInput = {
   passwordHash: string
   fullName: string
   phone?: string | null
+  profileImageUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   userRoles?: Prisma.UserRoleCreateNestedManyWithoutUserInput
@@ -820,6 +847,7 @@ export type UserUncheckedCreateWithoutReviewsInput = {
   passwordHash: string
   fullName: string
   phone?: string | null
+  profileImageUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   userRoles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutUserInput
@@ -857,6 +885,7 @@ export type UserUpdateWithoutReviewsInput = {
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
   fullName?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  profileImageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   userRoles?: Prisma.UserRoleUpdateManyWithoutUserNestedInput
@@ -879,6 +908,7 @@ export type UserUncheckedUpdateWithoutReviewsInput = {
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
   fullName?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  profileImageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   userRoles?: Prisma.UserRoleUncheckedUpdateManyWithoutUserNestedInput
@@ -900,6 +930,7 @@ export type UserCreateWithoutStoreInput = {
   passwordHash: string
   fullName: string
   phone?: string | null
+  profileImageUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   userRoles?: Prisma.UserRoleCreateNestedManyWithoutUserInput
@@ -922,6 +953,7 @@ export type UserUncheckedCreateWithoutStoreInput = {
   passwordHash: string
   fullName: string
   phone?: string | null
+  profileImageUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   userRoles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutUserInput
@@ -959,6 +991,7 @@ export type UserUpdateWithoutStoreInput = {
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
   fullName?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  profileImageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   userRoles?: Prisma.UserRoleUpdateManyWithoutUserNestedInput
@@ -981,6 +1014,7 @@ export type UserUncheckedUpdateWithoutStoreInput = {
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
   fullName?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  profileImageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   userRoles?: Prisma.UserRoleUncheckedUpdateManyWithoutUserNestedInput
@@ -1002,6 +1036,7 @@ export type UserCreateWithoutAddressesInput = {
   passwordHash: string
   fullName: string
   phone?: string | null
+  profileImageUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   userRoles?: Prisma.UserRoleCreateNestedManyWithoutUserInput
@@ -1024,6 +1059,7 @@ export type UserUncheckedCreateWithoutAddressesInput = {
   passwordHash: string
   fullName: string
   phone?: string | null
+  profileImageUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   userRoles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutUserInput
@@ -1061,6 +1097,7 @@ export type UserUpdateWithoutAddressesInput = {
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
   fullName?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  profileImageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   userRoles?: Prisma.UserRoleUpdateManyWithoutUserNestedInput
@@ -1083,6 +1120,7 @@ export type UserUncheckedUpdateWithoutAddressesInput = {
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
   fullName?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  profileImageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   userRoles?: Prisma.UserRoleUncheckedUpdateManyWithoutUserNestedInput
@@ -1104,6 +1142,7 @@ export type UserCreateWithoutWalletInput = {
   passwordHash: string
   fullName: string
   phone?: string | null
+  profileImageUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   userRoles?: Prisma.UserRoleCreateNestedManyWithoutUserInput
@@ -1126,6 +1165,7 @@ export type UserUncheckedCreateWithoutWalletInput = {
   passwordHash: string
   fullName: string
   phone?: string | null
+  profileImageUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   userRoles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutUserInput
@@ -1163,6 +1203,7 @@ export type UserUpdateWithoutWalletInput = {
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
   fullName?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  profileImageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   userRoles?: Prisma.UserRoleUpdateManyWithoutUserNestedInput
@@ -1185,6 +1226,7 @@ export type UserUncheckedUpdateWithoutWalletInput = {
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
   fullName?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  profileImageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   userRoles?: Prisma.UserRoleUncheckedUpdateManyWithoutUserNestedInput
@@ -1206,6 +1248,7 @@ export type UserCreateWithoutCartInput = {
   passwordHash: string
   fullName: string
   phone?: string | null
+  profileImageUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   userRoles?: Prisma.UserRoleCreateNestedManyWithoutUserInput
@@ -1228,6 +1271,7 @@ export type UserUncheckedCreateWithoutCartInput = {
   passwordHash: string
   fullName: string
   phone?: string | null
+  profileImageUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   userRoles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutUserInput
@@ -1265,6 +1309,7 @@ export type UserUpdateWithoutCartInput = {
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
   fullName?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  profileImageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   userRoles?: Prisma.UserRoleUpdateManyWithoutUserNestedInput
@@ -1287,6 +1332,7 @@ export type UserUncheckedUpdateWithoutCartInput = {
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
   fullName?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  profileImageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   userRoles?: Prisma.UserRoleUncheckedUpdateManyWithoutUserNestedInput
@@ -1308,6 +1354,7 @@ export type UserCreateWithoutOrdersInput = {
   passwordHash: string
   fullName: string
   phone?: string | null
+  profileImageUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   userRoles?: Prisma.UserRoleCreateNestedManyWithoutUserInput
@@ -1330,6 +1377,7 @@ export type UserUncheckedCreateWithoutOrdersInput = {
   passwordHash: string
   fullName: string
   phone?: string | null
+  profileImageUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   userRoles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutUserInput
@@ -1367,6 +1415,7 @@ export type UserUpdateWithoutOrdersInput = {
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
   fullName?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  profileImageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   userRoles?: Prisma.UserRoleUpdateManyWithoutUserNestedInput
@@ -1389,6 +1438,7 @@ export type UserUncheckedUpdateWithoutOrdersInput = {
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
   fullName?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  profileImageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   userRoles?: Prisma.UserRoleUncheckedUpdateManyWithoutUserNestedInput
@@ -1410,6 +1460,7 @@ export type UserCreateWithoutStatusChangesInput = {
   passwordHash: string
   fullName: string
   phone?: string | null
+  profileImageUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   userRoles?: Prisma.UserRoleCreateNestedManyWithoutUserInput
@@ -1432,6 +1483,7 @@ export type UserUncheckedCreateWithoutStatusChangesInput = {
   passwordHash: string
   fullName: string
   phone?: string | null
+  profileImageUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   userRoles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutUserInput
@@ -1469,6 +1521,7 @@ export type UserUpdateWithoutStatusChangesInput = {
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
   fullName?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  profileImageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   userRoles?: Prisma.UserRoleUpdateManyWithoutUserNestedInput
@@ -1491,6 +1544,7 @@ export type UserUncheckedUpdateWithoutStatusChangesInput = {
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
   fullName?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  profileImageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   userRoles?: Prisma.UserRoleUncheckedUpdateManyWithoutUserNestedInput
@@ -1512,6 +1566,7 @@ export type UserCreateWithoutDeliveryJobsInput = {
   passwordHash: string
   fullName: string
   phone?: string | null
+  profileImageUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   userRoles?: Prisma.UserRoleCreateNestedManyWithoutUserInput
@@ -1534,6 +1589,7 @@ export type UserUncheckedCreateWithoutDeliveryJobsInput = {
   passwordHash: string
   fullName: string
   phone?: string | null
+  profileImageUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   userRoles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutUserInput
@@ -1571,6 +1627,7 @@ export type UserUpdateWithoutDeliveryJobsInput = {
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
   fullName?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  profileImageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   userRoles?: Prisma.UserRoleUpdateManyWithoutUserNestedInput
@@ -1593,6 +1650,7 @@ export type UserUncheckedUpdateWithoutDeliveryJobsInput = {
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
   fullName?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  profileImageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   userRoles?: Prisma.UserRoleUncheckedUpdateManyWithoutUserNestedInput
@@ -1614,6 +1672,7 @@ export type UserCreateWithoutDriverEarningInput = {
   passwordHash: string
   fullName: string
   phone?: string | null
+  profileImageUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   userRoles?: Prisma.UserRoleCreateNestedManyWithoutUserInput
@@ -1636,6 +1695,7 @@ export type UserUncheckedCreateWithoutDriverEarningInput = {
   passwordHash: string
   fullName: string
   phone?: string | null
+  profileImageUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   userRoles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutUserInput
@@ -1673,6 +1733,7 @@ export type UserUpdateWithoutDriverEarningInput = {
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
   fullName?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  profileImageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   userRoles?: Prisma.UserRoleUpdateManyWithoutUserNestedInput
@@ -1695,6 +1756,7 @@ export type UserUncheckedUpdateWithoutDriverEarningInput = {
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
   fullName?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  profileImageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   userRoles?: Prisma.UserRoleUncheckedUpdateManyWithoutUserNestedInput
@@ -1716,6 +1778,7 @@ export type UserCreateWithoutRefundsInput = {
   passwordHash: string
   fullName: string
   phone?: string | null
+  profileImageUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   userRoles?: Prisma.UserRoleCreateNestedManyWithoutUserInput
@@ -1738,6 +1801,7 @@ export type UserUncheckedCreateWithoutRefundsInput = {
   passwordHash: string
   fullName: string
   phone?: string | null
+  profileImageUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   userRoles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutUserInput
@@ -1775,6 +1839,7 @@ export type UserUpdateWithoutRefundsInput = {
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
   fullName?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  profileImageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   userRoles?: Prisma.UserRoleUpdateManyWithoutUserNestedInput
@@ -1797,6 +1862,7 @@ export type UserUncheckedUpdateWithoutRefundsInput = {
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
   fullName?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  profileImageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   userRoles?: Prisma.UserRoleUncheckedUpdateManyWithoutUserNestedInput
@@ -1818,6 +1884,7 @@ export type UserCreateWithoutSystemTimeUpdatesInput = {
   passwordHash: string
   fullName: string
   phone?: string | null
+  profileImageUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   userRoles?: Prisma.UserRoleCreateNestedManyWithoutUserInput
@@ -1840,6 +1907,7 @@ export type UserUncheckedCreateWithoutSystemTimeUpdatesInput = {
   passwordHash: string
   fullName: string
   phone?: string | null
+  profileImageUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   userRoles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutUserInput
@@ -1877,6 +1945,7 @@ export type UserUpdateWithoutSystemTimeUpdatesInput = {
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
   fullName?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  profileImageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   userRoles?: Prisma.UserRoleUpdateManyWithoutUserNestedInput
@@ -1899,6 +1968,7 @@ export type UserUncheckedUpdateWithoutSystemTimeUpdatesInput = {
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
   fullName?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  profileImageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   userRoles?: Prisma.UserRoleUncheckedUpdateManyWithoutUserNestedInput
@@ -2024,6 +2094,7 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   passwordHash?: boolean
   fullName?: boolean
   phone?: boolean
+  profileImageUrl?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   userRoles?: boolean | Prisma.User$userRolesArgs<ExtArgs>
@@ -2048,6 +2119,7 @@ export type UserSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   passwordHash?: boolean
   fullName?: boolean
   phone?: boolean
+  profileImageUrl?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }, ExtArgs["result"]["user"]>
@@ -2059,6 +2131,7 @@ export type UserSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   passwordHash?: boolean
   fullName?: boolean
   phone?: boolean
+  profileImageUrl?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }, ExtArgs["result"]["user"]>
@@ -2070,11 +2143,12 @@ export type UserSelectScalar = {
   passwordHash?: boolean
   fullName?: boolean
   phone?: boolean
+  profileImageUrl?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "username" | "email" | "passwordHash" | "fullName" | "phone" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
+export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "username" | "email" | "passwordHash" | "fullName" | "phone" | "profileImageUrl" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
 export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   userRoles?: boolean | Prisma.User$userRolesArgs<ExtArgs>
   store?: boolean | Prisma.User$storeArgs<ExtArgs>
@@ -2116,6 +2190,7 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     passwordHash: string
     fullName: string
     phone: string | null
+    profileImageUrl: string | null
     createdAt: Date
     updatedAt: Date
   }, ExtArgs["result"]["user"]>
@@ -2559,6 +2634,7 @@ export interface UserFieldRefs {
   readonly passwordHash: Prisma.FieldRef<"User", 'String'>
   readonly fullName: Prisma.FieldRef<"User", 'String'>
   readonly phone: Prisma.FieldRef<"User", 'String'>
+  readonly profileImageUrl: Prisma.FieldRef<"User", 'String'>
   readonly createdAt: Prisma.FieldRef<"User", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"User", 'DateTime'>
 }

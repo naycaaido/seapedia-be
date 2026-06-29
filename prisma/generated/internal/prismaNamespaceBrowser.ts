@@ -106,6 +106,7 @@ export const UserScalarFieldEnum = {
   passwordHash: 'passwordHash',
   fullName: 'fullName',
   phone: 'phone',
+  profileImageUrl: 'profileImageUrl',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const

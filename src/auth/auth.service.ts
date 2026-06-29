@@ -2,11 +2,13 @@ import { Injectable, BadRequestException, UnauthorizedException, ConflictExcepti
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
+import { SupabaseStorageService } from '../storage/supabase-storage.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { SelectRoleDto } from './dto/select-role.dto';
 import { AddRoleDto } from './dto/add-role.dto';
 import { RoleName } from '../../prisma/generated/client';
+import { MulterFile } from '../common/types/multer-file';
 import { sanitizeHtml } from '../common/utils/sanitize-html';
 
 const VALID_NON_ADMIN_ROLES = [RoleName.Seller, RoleName.Buyer, RoleName.Driver] as const;
@@ -16,6 +18,7 @@ export class AuthService {
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
+    private storageService: SupabaseStorageService,
   ) {}
 
   async register(dto: RegisterDto) {
@@ -173,6 +176,22 @@ export class AuthService {
     return this.buildUserResponse(updatedUser!, currentActiveRole);
   }
 
+  async updateProfilePhoto(userId: number, file: MulterFile) {
+    const uploaded = await this.storageService.uploadProfilePhoto(userId, file);
+
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data: { profileImageUrl: uploaded.imageUrl },
+      include: {
+        userRoles: {
+          include: { role: true },
+        },
+      },
+    });
+
+    return this.buildUserResponse(user);
+  }
+
   private buildUserResponse(user: any, activeRole?: string | null) {
     const roles = user.userRoles.map((ur: any) => ur.role.name);
 
@@ -195,6 +214,7 @@ export class AuthService {
         email: user.email,
         fullName: user.fullName,
         phone: user.phone,
+        profileImageUrl: user.profileImageUrl,
       },
       roles,
       activeRole: activeRole || null,
