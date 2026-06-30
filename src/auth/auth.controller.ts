@@ -7,6 +7,7 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { SelectRoleDto } from './dto/select-role.dto';
 import { AddRoleDto } from './dto/add-role.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { Public } from '../common/decorators/public.decorator';
 import { MulterFile } from '../common/types/multer-file';
@@ -62,6 +63,14 @@ export class AuthController {
   @ApiOperation({ summary: 'Add a new role to the current account' })
   addRole(@Req() req: any, @Body() dto: AddRoleDto) {
     return this.authService.addRole(req.user.id, dto, req.user.activeRole);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch('profile')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update profile information (fullName, phone)' })
+  updateProfile(@Req() req: any, @Body() dto: UpdateProfileDto) {
+    return this.authService.updateProfile(req.user.id, dto, req.user.activeRole);
   }
 
   @UseGuards(JwtAuthGuard)
