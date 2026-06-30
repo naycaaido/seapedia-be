@@ -2,11 +2,14 @@ import { Injectable, BadRequestException, UnauthorizedException, ConflictExcepti
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
+import { SupabaseStorageService } from '../storage/supabase-storage.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { SelectRoleDto } from './dto/select-role.dto';
 import { AddRoleDto } from './dto/add-role.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 import { RoleName } from '../../prisma/generated/client';
+import { MulterFile } from '../common/types/multer-file';
 import { sanitizeHtml } from '../common/utils/sanitize-html';
 
 const VALID_NON_ADMIN_ROLES = [RoleName.Seller, RoleName.Buyer, RoleName.Driver] as const;
@@ -16,6 +19,7 @@ export class AuthService {
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
+    private storageService: SupabaseStorageService,
   ) {}
 
   async register(dto: RegisterDto) {
@@ -173,6 +177,48 @@ export class AuthService {
     return this.buildUserResponse(updatedUser!, currentActiveRole);
   }
 
+  async updateProfile(userId: number, dto: UpdateProfileDto, activeRole?: string | null) {
+    if (dto.fullName === undefined && dto.phone === undefined) {
+      throw new BadRequestException('At least one field (fullName or phone) must be provided');
+    }
+
+    const data: Record<string, string> = {};
+    if (dto.fullName !== undefined) {
+      data.fullName = sanitizeHtml(dto.fullName);
+    }
+    if (dto.phone !== undefined) {
+      data.phone = dto.phone;
+    }
+
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data,
+      include: {
+        userRoles: {
+          include: { role: true },
+        },
+      },
+    });
+
+    return this.buildUserResponse(user, activeRole);
+  }
+
+  async updateProfilePhoto(userId: number, file: MulterFile) {
+    const uploaded = await this.storageService.uploadProfilePhoto(userId, file);
+
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data: { profileImageUrl: uploaded.imageUrl },
+      include: {
+        userRoles: {
+          include: { role: true },
+        },
+      },
+    });
+
+    return this.buildUserResponse(user);
+  }
+
   private buildUserResponse(user: any, activeRole?: string | null) {
     const roles = user.userRoles.map((ur: any) => ur.role.name);
 
@@ -195,6 +241,7 @@ export class AuthService {
         email: user.email,
         fullName: user.fullName,
         phone: user.phone,
+        profileImageUrl: user.profileImageUrl,
       },
       roles,
       activeRole: activeRole || null,

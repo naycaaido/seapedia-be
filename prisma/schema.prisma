@@ -77,8 +77,9 @@ model User {
   username     String  @unique
   email        String  @unique
   passwordHash String  @map("password_hash")
-  fullName     String  @map("full_name")
-  phone        String?
+  fullName         String  @map("full_name")
+  phone            String?
+  profileImageUrl  String? @map("profile_image_url")
 
   userRoles UserRole[]
 

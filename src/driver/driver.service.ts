@@ -254,10 +254,9 @@ export class DriverService {
         deliveryJob: {
           include: {
             order: {
-              select: {
-                orderNumber: true,
-                deliveryMethod: true,
-                deliveryFee: true,
+              include: {
+                store: { select: { id: true, name: true } },
+                buyer: { select: { id: true, fullName: true } },
               },
             },
           },
@@ -266,21 +265,115 @@ export class DriverService {
       orderBy: { createdAt: 'desc' },
     });
 
+    const zero = new Prisma.Decimal(0);
+
+    // ── Existing summary ──
     const totalEarnings = earnings.reduce(
       (sum, e) => sum.add(e.amount),
-      new Prisma.Decimal(0),
+      zero,
     );
-
     const totalCompletedJobs = earnings.length;
     const averageEarningPerJob =
-      totalCompletedJobs > 0
-        ? totalEarnings.div(totalCompletedJobs)
-        : new Prisma.Decimal(0);
+      totalCompletedJobs > 0 ? totalEarnings.div(totalCompletedJobs) : zero;
+
+    // ── Extended summary metrics ──
+    const latestEarningDate = earnings.length > 0 ? earnings[0].createdAt : null;
+
+    const totalDeliveryFees = earnings.reduce(
+      (sum, e) => sum.add(e.deliveryJob.deliveryFee),
+      zero,
+    );
+    const averageDeliveryFee =
+      totalCompletedJobs > 0 ? totalDeliveryFees.div(totalCompletedJobs) : zero;
+    const averageDriverShare =
+      totalDeliveryFees.gt(0) ? totalEarnings.div(totalDeliveryFees) : zero;
+
+    // ── Monthly trend ──
+    const monthMap = new Map<string, { totalEarnings: Prisma.Decimal; totalDeliveries: number }>();
+    for (const e of earnings) {
+      const d = e.createdAt;
+      const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      const existing = monthMap.get(m);
+      if (existing) {
+        existing.totalEarnings = existing.totalEarnings.add(e.amount);
+        existing.totalDeliveries++;
+      } else {
+        monthMap.set(m, { totalEarnings: e.amount, totalDeliveries: 1 });
+      }
+    }
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const monthlyTrend = Array.from(monthMap.entries())
+      .map(([month, data]) => {
+        const [y, m] = month.split('-');
+        const label = `${months[Number(m) - 1]} ${y}`;
+        return { month, label, totalEarnings: data.totalEarnings, totalDeliveries: data.totalDeliveries };
+      })
+      .sort((a, b) => a.month.localeCompare(b.month));
+
+    const highestEarningMonth = monthlyTrend.length > 0
+      ? monthlyTrend.reduce((max, cur) => (cur.totalEarnings.gt(max.totalEarnings) ? cur : max))
+      : null;
+
+    // ── Earnings by delivery method ──
+    const methodMap = new Map<string, { totalEarnings: Prisma.Decimal; totalDeliveries: number }>();
+    for (const e of earnings) {
+      const dm = e.deliveryJob.deliveryMethod;
+      const existing = methodMap.get(dm);
+      if (existing) {
+        existing.totalEarnings = existing.totalEarnings.add(e.amount);
+        existing.totalDeliveries++;
+      } else {
+        methodMap.set(dm, { totalEarnings: e.amount, totalDeliveries: 1 });
+      }
+    }
+    const earningsByDeliveryMethod = Array.from(methodMap.entries())
+      .map(([deliveryMethod, d]) => ({ deliveryMethod, ...d }));
+
+    // ── Earnings by job status ──
+    const statusMap = new Map<string, { totalEarnings: Prisma.Decimal; totalDeliveries: number }>();
+    for (const e of earnings) {
+      const s = e.deliveryJob.status;
+      const existing = statusMap.get(s);
+      if (existing) {
+        existing.totalEarnings = existing.totalEarnings.add(e.amount);
+        existing.totalDeliveries++;
+      } else {
+        statusMap.set(s, { totalEarnings: e.amount, totalDeliveries: 1 });
+      }
+    }
+    const earningsByStatus = Array.from(statusMap.entries())
+      .map(([status, d]) => ({ status, ...d }));
+
+    // ── Export rows ──
+    const exportRows = earnings.map((e) => ({
+      earningId: e.id,
+      jobId: e.deliveryJobId,
+      orderId: e.deliveryJob.orderId,
+      orderNumber: e.deliveryJob.order.orderNumber,
+      date: e.createdAt.toISOString(),
+      status: e.deliveryJob.status,
+      deliveryMethod: e.deliveryJob.deliveryMethod,
+      deliveryFee: e.deliveryJob.deliveryFee,
+      driverEarning: e.amount,
+      storeName: e.deliveryJob.order.store.name,
+      buyerName: e.deliveryJob.order.buyer.fullName,
+    }));
 
     return {
       totalEarnings,
       totalCompletedJobs,
       averageEarningPerJob,
+      totalDeliveries: totalCompletedJobs,
+      averageEarningPerDelivery: averageEarningPerJob,
+      highestEarningMonth,
+      latestEarningDate,
+      totalDeliveryFees,
+      averageDeliveryFee,
+      averageDriverShare,
+      monthlyTrend,
+      earningsByDeliveryMethod,
+      earningsByStatus,
+      exportRows,
       earnings,
     };
   }
