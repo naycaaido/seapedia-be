@@ -47,7 +47,8 @@ export class DiscountsService {
     });
   }
 
-  async validateCode(code: string, subtotal: Prisma.Decimal) {
+  async validateCode(rawCode: string, subtotal: Prisma.Decimal) {
+    const code = rawCode.trim().toUpperCase();
     const now = await this.systemTime.getCurrentTime();
 
     const voucher = await this.prisma.voucher.findUnique({
@@ -70,10 +71,10 @@ export class DiscountsService {
   }
 
   async validateAndApply(
-    code: string | undefined,
+    rawCode: string | undefined,
     subtotal: Prisma.Decimal,
   ): Promise<DiscountResult> {
-    if (!code) {
+    if (!rawCode) {
       return {
         discountAmount: new Prisma.Decimal(0),
         voucherId: null,
@@ -84,6 +85,7 @@ export class DiscountsService {
       };
     }
 
+    const code = rawCode.trim().toUpperCase();
     const now = await this.systemTime.getCurrentTime();
 
     const voucher = await this.prisma.voucher.findUnique({
@@ -219,11 +221,15 @@ export class DiscountsService {
     expiryDate: string;
     isActive?: boolean;
   }) {
+    if (dto.discountType === DiscountType.PERCENTAGE && dto.discountValue > 100) {
+      throw new BadRequestException('Percentage discount value cannot exceed 100%');
+    }
+    const code = dto.code.trim().toUpperCase();
     try {
       return await this.prisma.voucher.create({
         data: {
           name: dto.name,
-          code: dto.code,
+          code,
           description: dto.description,
           discountType: dto.discountType,
           discountValue: dto.discountValue,
@@ -255,11 +261,15 @@ export class DiscountsService {
     expiryDate: string;
     isActive?: boolean;
   }) {
+    if (dto.discountType === DiscountType.PERCENTAGE && dto.discountValue > 100) {
+      throw new BadRequestException('Percentage discount value cannot exceed 100%');
+    }
+    const code = dto.code.trim().toUpperCase();
     try {
       return await this.prisma.promo.create({
         data: {
           name: dto.name,
-          code: dto.code,
+          code,
           description: dto.description,
           discountType: dto.discountType,
           discountValue: dto.discountValue,

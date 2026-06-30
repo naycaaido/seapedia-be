@@ -10,6 +10,7 @@ import {
   IsNotEmpty,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
 import { DiscountType } from '../../../prisma/generated/client';
 
 export class CreateVoucherDto {
@@ -23,6 +24,7 @@ export class CreateVoucherDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(50)
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim().toUpperCase() : value))
   code!: string;
 
   @ApiPropertyOptional({ example: 'Voucher diskon 10% untuk semua produk' })

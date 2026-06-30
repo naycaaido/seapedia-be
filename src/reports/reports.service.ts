@@ -191,6 +191,7 @@ export class ReportsService {
         totalItemsSold: 0,
         grossSales: zero,
         totalDiscountGiven: zero,
+        platformDiscountApplied: zero,
         netIncome: zero,
         monthlyTrend: [],
         incomeByProduct: [],
@@ -236,6 +237,7 @@ export class ReportsService {
       grossSales = grossSales.add(inc.order.subtotal);
       totalDiscountGiven = totalDiscountGiven.add(inc.order.discountAmount);
     }
+    const platformDiscountApplied = totalDiscountGiven;
     const netIncome = totalIncome;
 
     // ── Monthly trend ──
@@ -336,6 +338,7 @@ export class ReportsService {
         deliveryMethod: inc.order.deliveryMethod,
         subtotal: inc.order.subtotal,
         discountAmount: inc.order.discountAmount,
+        platformDiscountApplied: inc.order.discountAmount,
         sellerIncome: inc.amount,
         totalItems,
       };
@@ -350,6 +353,7 @@ export class ReportsService {
       totalItemsSold,
       grossSales,
       totalDiscountGiven,
+      platformDiscountApplied,
       netIncome,
       monthlyTrend,
       incomeByProduct,

@@ -10,6 +10,7 @@ import {
   IsNotEmpty,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
 import { DiscountType } from '../../../prisma/generated/client';
 
 export class CreatePromoDto {
@@ -23,6 +24,7 @@ export class CreatePromoDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(50)
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim().toUpperCase() : value))
   code!: string;
 
   @ApiPropertyOptional({ example: 'Cashback Rp 20.000 untuk pembelian minimal Rp 200.000' })

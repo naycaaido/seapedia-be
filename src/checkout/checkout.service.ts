@@ -193,14 +193,21 @@ export class CheckoutService {
         }
       }
 
-      // Decrement voucher remainingUsage inside transaction
+      // Decrement voucher remainingUsage inside transaction atomically if remainingUsage > 0
       if (discount.voucherId) {
-        await tx.voucher.update({
-          where: { id: discount.voucherId },
+        const updateResult = await tx.voucher.updateMany({
+          where: {
+            id: discount.voucherId,
+            remainingUsage: { gt: 0 },
+          },
           data: {
             remainingUsage: { decrement: 1 },
           },
         });
+
+        if (updateResult.count === 0) {
+          throw new BadRequestException('Voucher is no longer available');
+        }
       }
 
       await tx.cartItem.deleteMany({

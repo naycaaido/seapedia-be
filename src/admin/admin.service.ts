@@ -312,6 +312,16 @@ export class AdminService {
           },
         });
 
+        // Restore voucher usage if a voucher was used on the order
+        if (order.voucherId) {
+          await tx.voucher.update({
+            where: { id: order.voucherId },
+            data: {
+              remainingUsage: { increment: 1 },
+            },
+          });
+        }
+
         const wallet = await tx.wallet.findUnique({
           where: { userId: order.buyerId },
         });
