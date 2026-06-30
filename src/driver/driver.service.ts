@@ -170,9 +170,9 @@ export class DriverService {
       new Prisma.Decimal(0.9),
     );
 
-    const sellerIncomeAmount = job.order.subtotal.sub(
-      job.order.discountAmount,
-    );
+    // Platform/admin discounts do not reduce seller payout
+    // Seller income records full product subtotal
+    const sellerIncomeAmount = job.order.subtotal;
 
     const store = await this.prisma.store.findUnique({
       where: { id: job.order.storeId },

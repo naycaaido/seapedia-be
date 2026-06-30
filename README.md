@@ -54,10 +54,10 @@ Copy `.env.example` to `.env` and fill in your values. All variables are require
 | `FRONTEND_URL` | Yes | Allowed CORS origin. Must match the deployed frontend URL exactly. | `http://localhost:5173` |
 | `SUPABASE_URL` | Only for image upload | Your Supabase project URL | `https://your-project-id.supabase.co` |
 | `SUPABASE_SERVICE_ROLE_KEY` | Only for image upload | Supabase service role key (not anon key) — required for server-side storage operations | `eyJhbGciOiJIUzI1NiIs...` |
-| `SUPABASE_STORAGE_BUCKET` | No (default `products`) | Name of the Supabase Storage bucket for product images | `products` |
+| `SUPABASE_STORAGE_BUCKET` | No (default `products`) | Name of the Supabase Storage bucket for product and profile images | `products` |
 
 > **Important:** `JWT_SECRET` is mandatory. The app throws a clear error on startup if missing.
-> **Supabase:** `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are only needed for product image upload. Other API features work without them.
+> **Supabase:** `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are only needed for image upload (product + profile photos). Other API features work without them.
 
 ## Quick Start
 
@@ -102,6 +102,14 @@ npm run db:seed
 # Open Prisma Studio to browse data visually
 npm run db:studio
 ```
+
+**User model schema note:** The `User` model includes `profileImageUrl` (optional, `String?`) mapped to the `profile_image_url` database column. After pulling the latest schema changes, update your database:
+
+- **Local/dev with push:** `npx prisma db push`
+- **Local/dev with migration:** `npx prisma migrate dev`
+- **Production:** `npx prisma migrate deploy`
+
+If no migration file exists for `profile_image_url`, use `npx prisma db push` for demo/dev, or create a migration (`npx prisma migrate dev --name add-profile-image-url`) before production deployment.
 
 **Reset local database:** Drop the database (or truncate all tables), then run `npx prisma db push` and `npm run db:seed` again. There is no dedicated reset script.
 
@@ -172,10 +180,40 @@ app.enableCors({
 - In production, `FRONTEND_URL` must match the deployed frontend origin exactly.
 - The frontend's `VITE_API_BASE_URL` should point to the backend API base URL (e.g. `http://localhost:3000/api` locally).
 
+## Profile Management
+
+The authenticated user can view and edit their profile.
+
+**View profile**
+- `GET /api/auth/me` (authenticated) — returns current user with roles and active role
+
+**Edit profile**
+- `PATCH /api/auth/profile` (authenticated) — JSON body
+- Editable fields: `fullName`, `phone` (both optional; at least one required)
+- Validation: `fullName` (string, 2–100 chars), `phone` (Indonesian phone format)
+- Returns the same safe profile response format as `GET /api/auth/me`
+
+**Profile photo**
+- `PATCH /api/auth/profile-photo` (authenticated) — `multipart/form-data`, field `photo`
+- Accepted types: `image/jpeg`, `image/png`, `image/webp`; max 5 MB
+- Uploads to Supabase Storage and updates `profileImageUrl`
+
+**User response `profileImageUrl`** is included in the response of all auth endpoints:
+```
+GET /api/auth/me
+PATCH /api/auth/profile
+PATCH /api/auth/profile-photo
+POST /api/auth/register
+POST /api/auth/login
+POST /api/auth/select-role
+POST /api/auth/roles
+```
+
 ## Image Upload / Supabase Notes
 
-Product images are stored in **Supabase Storage**, not on the local filesystem.
+Images are stored in **Supabase Storage**, not on the local filesystem.
 
+**Product images**
 - Create product: image **required** via `multipart/form-data` field `image`
 - Update product: image optional; replaces existing if provided
 - Accepted types: `image/jpeg`, `image/png`, `image/webp`
@@ -185,7 +223,28 @@ Product images are stored in **Supabase Storage**, not on the local filesystem.
 - Soft-deleted product images are **not** automatically deleted.
 - Database stores both `imageUrl` (public display URL) and `imagePath` (internal storage path).
 
-**If Supabase is not configured,** product image upload endpoints return a 500 error. Other API features (auth, products without images, checkout, etc.) continue to work.
+**Profile photos**
+- Upload/replace: `PATCH /api/auth/profile-photo` (authenticated)
+- Request format: `multipart/form-data` with field name `photo`
+- Accepted types: `image/jpeg`, `image/png`, `image/webp`
+- Max file size: 5 MB
+- Storage path: `profile-photos/user-<userId>/<timestamp>-<random>.<ext>`
+- Uses the same `SUPABASE_STORAGE_BUCKET` as product images.
+- Old profile photos are **not** automatically deleted on re-upload.
+- The bucket must be public for `getPublicUrl()` to return accessible URLs.
+- User response includes `profileImageUrl` (nullable string).
+
+**If Supabase is not configured,** upload endpoints return a 500 error. Other API features (auth, product catalog, checkout, etc.) continue to work.
+
+## CI / Automated Checks
+
+A backend CI workflow is defined in `.github/workflows/backend-ci.yml`. It runs on push and pull request to `main` and `dev` branches:
+
+- **`npm ci`** — clean install dependencies
+- **`npx prisma generate`** — generate Prisma client
+- **`npm run build`** — compile TypeScript
+
+CI does **not** deploy and does **not** run database migrations.
 
 ## Production Build / Deployment
 
@@ -194,21 +253,26 @@ Product images are stored in **Supabase Storage**, not on the local filesystem.
 3. Run Prisma setup:
    ```bash
    npx prisma generate
-   npx prisma db push    # or: npx prisma migrate deploy
+   npx prisma migrate deploy
    ```
 4. (Optional) Seed demo data — skip for production unless needed.
-5. Build:
+5. Build and start:
    ```bash
-   npm run build
-   ```
-6. Start:
-   ```bash
+   npm ci && npx prisma generate && npm run build
    npm run start:prod
    ```
-7. Configure `FRONTEND_URL` to match your deployed frontend origin.
-8. Configure `JWT_SECRET` with a strong random secret.
-9. Configure Supabase env vars if image upload is needed.
-10. Verify the API responds at `https://your-domain.com/api` and Swagger at `/api/docs`.
+   > **Important:** Use `npm run start:prod` (runs `node dist/main`) for production. Do **not** use `nest start` — it loads dev dependencies.
+
+6. Configure `FRONTEND_URL` to match your deployed frontend origin.
+7. Configure `JWT_SECRET` with a strong random secret.
+8. Configure Supabase env vars if image upload is needed.
+9. Verify the API responds at `https://your-domain.com/api` and Swagger at `/api/docs`.
+
+**Zeabur / VPS notes:**
+- Ensure memory is at least **512 MB** (1 GB recommended for NestJS + Prisma).
+- Run database migration (**`npx prisma migrate deploy`** or **`npx prisma db push`**) before testing profile photo upload.
+- `FRONTEND_URL` must match the deployed frontend origin exactly for CORS.
+- The frontend's `VITE_API_BASE_URL` must point to the backend's `/api` base URL.
 
 ## Manual Demo Flow
 
@@ -240,6 +304,7 @@ Login as `pembeli` / `password123`.
 8. Checkout: `POST /api/checkout` (uses wallet balance)
 9. View orders: `GET /api/orders`
 10. View spending report: `GET /api/buyer/reports/spending`
+    - Returns: `totalSpending`, `totalOrders`, `averageOrderValue`, `monthlyTrend`, `spendingByStore`, `spendingByDeliveryMethod`, `spendingByStatus`, `topProducts`, `exportRows`
 
 **Seller flow**
 
@@ -250,6 +315,7 @@ Login as `tokoindah` / `password123`.
 4. View store orders: `GET /api/seller/orders`
 5. Process an order: `POST /api/seller/orders/:id/process`
 6. View income report: `GET /api/seller/reports/income`
+    - Returns: `totalIncome`, `totalOrders`, `averageIncomePerOrder`, `monthlyTrend`, `incomeByProduct`, `incomeByStatus`, `incomeByDeliveryMethod`, `exportRows`
 7. View dashboard: `GET /api/seller/dashboard`
 
 **Driver flow**
@@ -260,6 +326,7 @@ Login as `supir` / `password123`.
 3. Complete delivery: `POST /api/driver/jobs/:id/complete`
 4. View delivery history: `GET /api/driver/history`
 5. View earnings: `GET /api/driver/earnings`
+    - Returns: `totalEarnings`, `totalCompletedJobs`, `averageEarningPerJob`, `monthlyTrend`, `earningsByDeliveryMethod`, `earningsByStatus`, `exportRows`
 
 **Admin flow**
 

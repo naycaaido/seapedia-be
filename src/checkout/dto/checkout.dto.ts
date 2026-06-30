@@ -10,6 +10,7 @@ import {
   ValidationArguments,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
 import { DeliveryMethod } from '../../../prisma/generated/client';
 
 @ValidatorConstraint({ name: 'DiscountCodeMutuallyExclusive', async: false })
@@ -47,6 +48,7 @@ export class CheckoutDto {
   })
   @IsOptional()
   @IsString()
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim().toUpperCase() : value))
   voucherCode?: string;
 
   @ApiPropertyOptional({
@@ -55,6 +57,7 @@ export class CheckoutDto {
   })
   @IsOptional()
   @IsString()
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim().toUpperCase() : value))
   promoCode?: string;
 
   @Validate(DiscountCodeMutuallyExclusive)
